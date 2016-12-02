@@ -7,11 +7,12 @@
     <authors>Szymon Pobiega</authors>
     <owners>SzymonPobiega</owners>    
     <projectUrl>https://github.com/SzymonPobiega/NServiceBus.Raw</projectUrl>
+	<licenseUrl>https://github.com/SzymonPobiega/NServiceBus.Raw/blob/master/LICENSE.md</licenseUrl>
     <iconUrl>$iconUrl$</iconUrl>
     <requireLicenseAcceptance>$requireLicenseAcceptance$</requireLicenseAcceptance>
     <description>Uses NServiceBus infrastructure to send raw messages</description>
     <releaseNotes></releaseNotes>
-    <copyright>$copyright$</copyright>
+    <copyright>Copyright 2016 Szymon Pobiega</copyright>
     <tags>nservicebus raw messages</tags>
     <frameworkAssemblies>
       <frameworkAssembly assemblyName="System" targetFramework="net452" />
