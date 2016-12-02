@@ -6,6 +6,16 @@ Sending and receiving raw messages using NServiceBus transport infrastructure. N
 
 ## Configuration
 
+Configuration of raw endpoints is very straightforwards and follows the same patterns as regular NServiceBus endpoint configuration
+
+```
+var senderConfig = RawEndpointConfiguration.Create("Sender", OnMessage);
+senderConfig.UseTransport<MsmqTransport>();
+senderConfig.SendFailedMessagesTo("error");
+
+var sender = await RawEndpoint.Start(senderConfig).ConfigureAwait(false);
+```
+
 ## Sending
 
 The following code sends a message to another endpoint
@@ -28,6 +38,18 @@ await sender.SendRaw(
 ```
 
 ## Receiving
+
+The following code implements the on-message callback invoked when a message arrives at a raw endpoint
+
+```
+static Task OnMessage(MessageContext context, IDispatchMessages dispatcher)
+{
+    var message = Deserialize(context.Body, context.Headers["SomeHeader"]);
+
+    Console.WriteLine(message);
+    return Task.FromResult(0);
+}
+```
 
 ## Icon
 
