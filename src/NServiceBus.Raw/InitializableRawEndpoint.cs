@@ -20,7 +20,7 @@ namespace NServiceBus.Raw
             CreateCriticalErrorHandler();
 
             var transportDefinition = settings.Get<TransportDefinition>();
-            var connectionString = GetConnectionString();
+            var connectionString = GetConnectionString(transportDefinition);
             var transportInfrastructure = transportDefinition.Initialize(settings, connectionString);
             settings.Set<TransportInfrastructure>(transportInfrastructure);
 
@@ -48,10 +48,10 @@ namespace NServiceBus.Raw
             return Task.FromResult<IStartableRawEndpoint>(startableEndpoint);
         }
 
-        string GetConnectionString()
+        string GetConnectionString(TransportDefinition transportDefinition)
         {
             var instance = settings.Get(connectionStringType.FullName);
-            return (string) connectionStringGetter.Invoke(instance, new object[0]);
+            return (string) connectionStringGetter.Invoke(instance, new object[] {transportDefinition});
         }
 
         RawCriticalError CreateCriticalErrorHandler()
@@ -64,7 +64,7 @@ namespace NServiceBus.Raw
         SettingsHolder settings;
         Func<MessageContext, IDispatchMessages, Task> onMessage;
 
-        static Type connectionStringType = Type.GetType("NServiceBus.TransportConnectionString", true);
+        static Type connectionStringType = typeof(IEndpointInstance).Assembly.GetType("NServiceBus.TransportConnectionString", true);
         static MethodInfo connectionStringGetter = connectionStringType.GetMethod("GetConnectionStringOrRaiseError", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
     }
 }

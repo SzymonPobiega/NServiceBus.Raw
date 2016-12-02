@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <id>NServiceBus.Raw</id>
+    <title>NServiceBus.Raw</title>
+    <version>$version$</version>
+    <authors>Szymon Pobiega</authors>
+    <owners>SzymonPobiega</owners>    
+    <projectUrl>https://github.com/SzymonPobiega/NServiceBus.Raw</projectUrl>
+    <iconUrl>$iconUrl$</iconUrl>
+    <requireLicenseAcceptance>$requireLicenseAcceptance$</requireLicenseAcceptance>
+    <description>Uses NServiceBus infrastructure to send raw messages</description>
+    <releaseNotes></releaseNotes>
+    <copyright>$copyright$</copyright>
+    <tags>nservicebus raw messages</tags>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System" targetFramework="net452" />
+      <frameworkAssembly assemblyName="System.Core" targetFramework="net452" />
+    </frameworkAssemblies>
+    <dependencies/>
+  </metadata>
+  <files>
+    <file src="..\..\binaries\NServiceBus.Raw.???" target="lib\net452" />
+  </files>
+</package>

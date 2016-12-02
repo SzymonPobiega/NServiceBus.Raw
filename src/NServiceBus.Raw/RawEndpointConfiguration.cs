@@ -69,7 +69,6 @@ namespace NServiceBus.Raw
         /// <summary>
         /// Instructs the transport to limits the allowed concurrency when processing messages.
         /// </summary>
-        /// <param name="config">The <see cref="EndpointConfiguration" /> instance to apply the Settings to.</param>
         /// <param name="maxConcurrency">The max concurrency allowed.</param>
         public void LimitMessageProcessingConcurrencyTo(int maxConcurrency)
         {
