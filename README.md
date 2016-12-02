@@ -1,4 +1,4 @@
-![Icon](https://raw.github.com/SzymonPobiega/NServiceBus.Raw/master/icons/dune-byugg.png)
+![Icon](https://raw.github.com/SzymonPobiega/NServiceBus.Raw/master/icons/dune-buggy.png)
 
 # NServiceBus.Raw
 
