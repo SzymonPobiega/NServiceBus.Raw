@@ -15,7 +15,6 @@ namespace NServiceBus.Raw
     {
         Func<MessageContext, IDispatchMessages, Task> onMessage;
         internal SettingsHolder Settings = new SettingsHolder();
-        internal int? ConcurrencyLimit;
 
         /// <summary>
         /// Creates a send-only raw endpoint config.
