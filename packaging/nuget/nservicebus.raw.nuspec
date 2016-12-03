@@ -18,7 +18,9 @@
       <frameworkAssembly assemblyName="System" targetFramework="net452" />
       <frameworkAssembly assemblyName="System.Core" targetFramework="net452" />
     </frameworkAssemblies>
-    <dependencies/>
+    <dependencies>
+      <dependency id="NServiceBus" version="[6.0.0, 7.0.0)" />
+    </dependencies>
   </metadata>
   <files>
     <file src="..\..\binaries\NServiceBus.Raw.???" target="lib\net452" />
