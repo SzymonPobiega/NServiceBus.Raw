@@ -37,9 +37,6 @@
       <HintPath>..\packages\NServiceBus.6.0.2\lib\net452\NServiceBus.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="NServiceBus.Raw">
-      <HintPath>..\NServiceBus.Raw\bin\Debug\NServiceBus.Raw.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -56,6 +53,12 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NServiceBus.Raw\NServiceBus.Raw.csproj">
+      <Project>{9141a209-397a-4a8b-ae1b-f05ad938033c}</Project>
+      <Name>NServiceBus.Raw</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
