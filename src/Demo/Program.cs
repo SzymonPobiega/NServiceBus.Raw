@@ -21,13 +21,13 @@
         {
             //Ensure queues are created before starting!
 
-            var senderConfig = RawEndpointConfiguration.Create("Sender", OnReply);
+            var senderConfig = RawEndpointConfiguration.Create("Sender", OnReply, "error");
             senderConfig.UseTransport<MsmqTransport>();
-            senderConfig.SendFailedMessagesTo("error");
+            senderConfig.AutoCreateQueue();
 
-            var receiverConfig = RawEndpointConfiguration.Create("Receiver", OnRequest);
+            var receiverConfig = RawEndpointConfiguration.Create("Receiver", OnRequest, "error");
             receiverConfig.UseTransport<MsmqTransport>();
-            receiverConfig.SendFailedMessagesTo("error");
+            receiverConfig.AutoCreateQueue();
 
             var sender = await RawEndpoint.Start(senderConfig).ConfigureAwait(false);
             var receiver = await RawEndpoint.Start(receiverConfig).ConfigureAwait(false);

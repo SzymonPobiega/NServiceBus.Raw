@@ -75,21 +75,21 @@ namespace NServiceBus.Raw
             }
 
             var purgeOnStartup = settings.GetOrDefault<bool>("Transport.PurgeOnStartup");
-            var errorQueue = settings.ErrorQueueAddress();
+            var poisonMessageQueue = settings.Get<string>("NServiceBus.Raw.PoisonMessageQueue");
             var requiredTransactionSupport = settings.GetRequiredTransactionModeForReceives();
 
-            var receiver = BuildMainReceiver(errorQueue, purgeOnStartup, requiredTransactionSupport);
+            var receiver = BuildMainReceiver(poisonMessageQueue, purgeOnStartup, requiredTransactionSupport);
 
             return receiver;
         }
 
-        RawTransportReceiver BuildMainReceiver(string errorQueue, bool purgeOnStartup, TransportTransactionMode requiredTransactionSupport)
+        RawTransportReceiver BuildMainReceiver(string poisonMessageQueue, bool purgeOnStartup, TransportTransactionMode requiredTransactionSupport)
         {
-            var pushSettings = new PushSettings(settings.LocalAddress(), errorQueue, purgeOnStartup, requiredTransactionSupport);
+            var pushSettings = new PushSettings(settings.LocalAddress(), poisonMessageQueue, purgeOnStartup, requiredTransactionSupport);
             var dequeueLimitations = GetDequeueLimitationsForReceivePipeline();
-            var errorHandlingPolicy = new RawEndpointErrorHandlingPolicy(settings, dispatcher, errorQueue, GetImmediateRetryCount());
-
-            var receiver = new RawTransportReceiver(messagePump, dispatcher, onMessage, pushSettings, dequeueLimitations, criticalError, errorHandlingPolicy);
+            var errorHandlingPolicy = settings.Get<IErrorHandlingPolicy>();
+            var receiver = new RawTransportReceiver(messagePump, dispatcher, onMessage, pushSettings, dequeueLimitations, criticalError, 
+                new RawEndpointErrorHandlingPolicy(settings, dispatcher, errorHandlingPolicy));
             return receiver;
         }
 

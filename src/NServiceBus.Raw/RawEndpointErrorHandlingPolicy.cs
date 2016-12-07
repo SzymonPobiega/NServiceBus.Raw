@@ -12,15 +12,13 @@ namespace NServiceBus.Raw
     class RawEndpointErrorHandlingPolicy
     {
         IDispatchMessages dispatcher;
-        string errorQueue;
         Dictionary<string, string> staticFaultMetadata;
-        int immediateRetryCount;
+        IErrorHandlingPolicy policy;
 
-        public RawEndpointErrorHandlingPolicy(ReadOnlySettings settings, IDispatchMessages dispatcher, string errorQueue, int immediateRetryCount)
+        public RawEndpointErrorHandlingPolicy(ReadOnlySettings settings, IDispatchMessages dispatcher, IErrorHandlingPolicy policy)
         {
             this.dispatcher = dispatcher;
-            this.errorQueue = errorQueue;
-            this.immediateRetryCount = immediateRetryCount;
+            this.policy = policy;
 
             staticFaultMetadata = new Dictionary<string, string>
             {
@@ -32,17 +30,12 @@ namespace NServiceBus.Raw
             };
         }
 
-        public async Task<ErrorHandleResult> OnError(ErrorContext errorContext)
+        public Task<ErrorHandleResult> OnError(ErrorContext errorContext)
         {
-            if (errorContext.ImmediateProcessingFailures < immediateRetryCount)
-            {
-                return ErrorHandleResult.RetryRequired;
-            }
-            await MoveToErrorQueue(errorContext).ConfigureAwait(false);
-            return ErrorHandleResult.Handled;
+            return policy.OnError(errorContext, dispatcher, MoveToErrorQueue);
         }
 
-        Task MoveToErrorQueue(ErrorContext errorContext)
+        async Task<ErrorHandleResult> MoveToErrorQueue(ErrorContext errorContext, string errorQueue)
         {
             var message = errorContext.Message;
 
@@ -61,7 +54,8 @@ namespace NServiceBus.Raw
 
             var transportOperations = new TransportOperations(new TransportOperation(outgoingMessage, new UnicastAddressTag(errorQueue)));
 
-            return dispatcher.Dispatch(transportOperations, errorContext.TransportTransaction, new ContextBag());
+            await dispatcher.Dispatch(transportOperations, errorContext.TransportTransaction, new ContextBag()).ConfigureAwait(false);
+            return ErrorHandleResult.Handled;
         }
     }
 }

@@ -50,7 +50,7 @@ namespace NServiceBus.Raw
         }
 
         CriticalError criticalError;
-        readonly RawEndpointErrorHandlingPolicy errorHandlingPolicy;
+        RawEndpointErrorHandlingPolicy errorHandlingPolicy;
         bool isStarted;
         PushRuntimeSettings pushRuntimeSettings;
         PushSettings pushSettings;

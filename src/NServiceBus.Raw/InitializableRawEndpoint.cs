@@ -7,6 +7,8 @@ using NServiceBus.Transport;
 
 namespace NServiceBus.Raw
 {
+    using System.Security.Principal;
+
     class InitializableRawEndpoint
     {
         public InitializableRawEndpoint(SettingsHolder settings, Func<MessageContext, IDispatchMessages, Task> onMessage)
@@ -15,7 +17,7 @@ namespace NServiceBus.Raw
             this.onMessage = onMessage;
         }
 
-        public Task<IStartableRawEndpoint> Initialize()
+        public async Task<IStartableRawEndpoint> Initialize()
         {
             CreateCriticalErrorHandler();
 
@@ -33,6 +35,8 @@ namespace NServiceBus.Raw
                 var receiveInfrastructure = transportInfrastructure.ConfigureReceiveInfrastructure();
                 messagePump = receiveInfrastructure.MessagePumpFactory();
 
+                var queueCreator = receiveInfrastructure.QueueCreatorFactory();
+
                 var baseQueueName = settings.GetOrDefault<string>("BaseInputQueueName") ?? settings.EndpointName();
 
                 var mainInstance = transportInfrastructure.BindToLocalEndpoint(new EndpointInstance(settings.EndpointName()));
@@ -42,10 +46,25 @@ namespace NServiceBus.Raw
 
                 var mainAddress = transportInfrastructure.ToTransportAddress(mainLogicalAddress);
                 settings.SetDefault("NServiceBus.SharedQueue", mainAddress);
+
+                if (settings.GetOrDefault<bool>("NServiceBus.Raw.CreateQueue"))
+                {
+                    var bindings = new QueueBindings();
+                    bindings.BindReceiving(mainAddress);
+                    await queueCreator.CreateQueueIfNecessary(bindings, GetInstallationUserName()).ConfigureAwait(false);
+                }
             }
 
             var startableEndpoint = new StartableRawEndpoint(settings, transportInfrastructure, CreateCriticalErrorHandler(), messagePump, dispatcher, onMessage);
-            return Task.FromResult<IStartableRawEndpoint>(startableEndpoint);
+            return startableEndpoint;
+        }
+
+        string GetInstallationUserName()
+        {
+            string username;
+            return settings.TryGet("NServiceBus.Raw.Identity", out username)
+                ? username
+                : WindowsIdentity.GetCurrent().Name;
         }
 
         string GetConnectionString(TransportDefinition transportDefinition)

@@ -23,7 +23,7 @@ namespace NServiceBus.Raw
         /// <returns></returns>
         public static RawEndpointConfiguration CreateSendOnly(string endpointName)
         {
-            return new RawEndpointConfiguration(endpointName, null);
+            return new RawEndpointConfiguration(endpointName, null, null);
         }
 
         /// <summary>
@@ -31,13 +31,14 @@ namespace NServiceBus.Raw
         /// </summary>
         /// <param name="endpointName">The name of the endpoint being configured.</param>
         /// <param name="onMessage">Callback invoked when a message is received.</param>
+        /// <param name="poisonMessageQueue">Queue to move poison messages that can't be received from transport.</param>
         /// <returns></returns>
-        public static RawEndpointConfiguration Create(string endpointName, Func<MessageContext, IDispatchMessages, Task> onMessage)
+        public static RawEndpointConfiguration Create(string endpointName, Func<MessageContext, IDispatchMessages, Task> onMessage, string poisonMessageQueue)
         {
-            return new RawEndpointConfiguration(endpointName, onMessage);
+            return new RawEndpointConfiguration(endpointName, onMessage, poisonMessageQueue);
         }
 
-        RawEndpointConfiguration(string endpointName, Func<MessageContext, IDispatchMessages, Task> onMessage)
+        RawEndpointConfiguration(string endpointName, Func<MessageContext, IDispatchMessages, Task> onMessage, string poisonMessageQueue)
         {
             this.onMessage = onMessage;
             ValidateEndpointName(endpointName);
@@ -53,16 +54,43 @@ namespace NServiceBus.Raw
             Settings.SetDefault("Endpoint.SendOnly", false);
             Settings.SetDefault("Transactions.IsolationLevel", IsolationLevel.ReadCommitted);
             Settings.SetDefault("Transactions.DefaultTimeout", TransactionManager.DefaultTimeout);
+
+            if (poisonMessageQueue != null)
+            {
+                Settings.Set("NServiceBus.Raw.PoisonMessageQueue", poisonMessageQueue);
+                Settings.SetDefault<IErrorHandlingPolicy>(new DefaultErrorHandlingPolicy(poisonMessageQueue, 5));
+            }
         }
 
         /// <summary>
-        /// Configure error queue Settings.
+        /// Instructs the endpoint to use a custom error handling policy.
         /// </summary>
-        /// <param name="errorQueue">The name of the error queue to use.</param>
-        public void SendFailedMessagesTo(string errorQueue)
+        public void CustomErrorHandlingPolicy(IErrorHandlingPolicy customPolicy)
         {
+            Guard.AgainstNull(nameof(customPolicy), customPolicy);
+            Settings.Set<IErrorHandlingPolicy>(customPolicy);
+        }
+
+        /// <summary>
+        /// Sets the number of immediate retries when message processing fails.
+        /// </summary>
+        public void DefaultErrorHandlingPolicy(string errorQueue, int immediateRetryCount)
+        {
+            Guard.AgainstNegative(nameof(immediateRetryCount), immediateRetryCount);
             Guard.AgainstNullAndEmpty(nameof(errorQueue), errorQueue);
-            Settings.Set("errorQueue", errorQueue);
+            Settings.Set<IErrorHandlingPolicy>(new DefaultErrorHandlingPolicy(errorQueue, immediateRetryCount));
+        }
+
+        /// <summary>
+        /// Instructs the endpoint to automatically create input queue if it does not exist.
+        /// </summary>
+        public void AutoCreateQueue(string identity = null)
+        {
+            Settings.Set("NServiceBus.Raw.CreateQueue", true);
+            if (identity != null)
+            {
+                Settings.Set("NServiceBus.Raw.Identity", identity);
+            }
         }
 
         /// <summary>
@@ -74,16 +102,6 @@ namespace NServiceBus.Raw
             Guard.AgainstNegativeAndZero(nameof(maxConcurrency), maxConcurrency);
 
             Settings.Set("MaxConcurrency", maxConcurrency);
-        }
-
-        /// <summary>
-        /// Sets the number of immediate retries when message processing fails.
-        /// </summary>
-        public void ImmediateRetries(int retryCount)
-        {
-            Guard.AgainstNegative(nameof(retryCount), retryCount);
-
-            Settings.Set("RetryCount", retryCount);
         }
 
         /// <summary>
