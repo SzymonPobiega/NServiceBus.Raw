@@ -51,6 +51,7 @@ namespace NServiceBus.Raw
                 {
                     var bindings = new QueueBindings();
                     bindings.BindReceiving(mainAddress);
+                    bindings.BindReceiving(settings.Get<string>("NServiceBus.Raw.PoisonMessageQueue"));
                     await queueCreator.CreateQueueIfNecessary(bindings, GetInstallationUserName()).ConfigureAwait(false);
                 }
             }

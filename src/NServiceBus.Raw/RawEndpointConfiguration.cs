@@ -43,7 +43,8 @@ namespace NServiceBus.Raw
             this.onMessage = onMessage;
             ValidateEndpointName(endpointName);
 
-            Settings.Set("Endpoint.SendOnly", onMessage == null);
+            var sendOnly = onMessage == null;
+            Settings.Set("Endpoint.SendOnly", sendOnly);
             Settings.Set("TypesToScan", new Type[0]);
             Settings.Set("NServiceBus.Routing.EndpointName", endpointName);
 
@@ -55,7 +56,7 @@ namespace NServiceBus.Raw
             Settings.SetDefault("Transactions.IsolationLevel", IsolationLevel.ReadCommitted);
             Settings.SetDefault("Transactions.DefaultTimeout", TransactionManager.DefaultTimeout);
 
-            if (poisonMessageQueue != null)
+            if (!sendOnly)
             {
                 Settings.Set("NServiceBus.Raw.PoisonMessageQueue", poisonMessageQueue);
                 Settings.SetDefault<IErrorHandlingPolicy>(new DefaultErrorHandlingPolicy(poisonMessageQueue, 5));
