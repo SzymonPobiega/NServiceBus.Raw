@@ -50,7 +50,8 @@
     <Compile Include="DefaultErrorHandlingPolicy.cs" />
     <Compile Include="ExceptionHeaderHelper.cs" />
     <Compile Include="Guard.cs" />
-    <Compile Include="ErrorHandlingPolicy.cs" />
+    <Compile Include="IErrorHandlingPolicy.cs" />
+    <Compile Include="IErrorHandlingPolicyContext.cs" />
     <Compile Include="InitializableRawEndpoint.cs" />
     <Compile Include="IRawEndpointInstance.cs" />
     <Compile Include="IStartableRawEndpoint.cs" />

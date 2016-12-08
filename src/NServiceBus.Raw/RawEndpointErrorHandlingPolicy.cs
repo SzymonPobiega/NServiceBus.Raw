@@ -9,6 +9,8 @@ using NServiceBus.Transport;
 
 namespace NServiceBus.Raw
 {
+    using System;
+
     class RawEndpointErrorHandlingPolicy
     {
         IDispatchMessages dispatcher;
@@ -25,17 +27,15 @@ namespace NServiceBus.Raw
                 {FaultsHeaderKeys.FailedQ, settings.LocalAddress()},
                 {Headers.ProcessingMachine, RuntimeEnvironment.MachineName},
                 {Headers.ProcessingEndpoint, settings.EndpointName()},
-                //{Headers.HostId, hostInfo.HostId.ToString("N")},
-                //{Headers.HostDisplayName, hostInfo.DisplayName}
             };
         }
 
         public Task<ErrorHandleResult> OnError(ErrorContext errorContext)
         {
-            return policy.OnError(errorContext, dispatcher, MoveToErrorQueue);
+            return policy.OnError(new Context(errorContext, MoveToErrorQueue), dispatcher);
         }
 
-        async Task<ErrorHandleResult> MoveToErrorQueue(ErrorContext errorContext, string errorQueue)
+        async Task<ErrorHandleResult> MoveToErrorQueue(ErrorContext errorContext, string errorQueue, bool includeStandardHeaders)
         {
             var message = errorContext.Message;
 
@@ -47,15 +47,35 @@ namespace NServiceBus.Raw
 
             ExceptionHeaderHelper.SetExceptionHeaders(headers, errorContext.Exception);
 
-            foreach (var faultMetadata in staticFaultMetadata)
+            if (includeStandardHeaders)
             {
-                headers[faultMetadata.Key] = faultMetadata.Value;
+                foreach (var faultMetadata in staticFaultMetadata)
+                {
+                    headers[faultMetadata.Key] = faultMetadata.Value;
+                }
             }
-
             var transportOperations = new TransportOperations(new TransportOperation(outgoingMessage, new UnicastAddressTag(errorQueue)));
 
             await dispatcher.Dispatch(transportOperations, errorContext.TransportTransaction, new ContextBag()).ConfigureAwait(false);
             return ErrorHandleResult.Handled;
+        }
+
+        class Context : IErrorHandlingPolicyContext
+        {
+            Func<ErrorContext, string, bool, Task<ErrorHandleResult>> moveToErrorQueue;
+
+            public Context(ErrorContext error, Func<ErrorContext, string, bool, Task<ErrorHandleResult>> moveToErrorQueue)
+            {
+                this.moveToErrorQueue = moveToErrorQueue;
+                Error = error;
+            }
+
+            public Task<ErrorHandleResult> MoveToErrorQueue(string errorQueue, bool attachStandardFailureHeaders = true)
+            {
+                return moveToErrorQueue(Error, errorQueue, attachStandardFailureHeaders);
+            }
+
+            public ErrorContext Error { get; }
         }
     }
 }
