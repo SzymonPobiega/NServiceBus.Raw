@@ -10,40 +10,53 @@
         where T : TransportDefinition, new()
     {
         TimeSpan delayBy;
-        string delayQueueName;
+        string storageQueueName;
+        string inputQueueName;
         Action<TransportExtensions<T>> transportCustomization;
         string poisonMessageQueue;
-        IRawEndpointInstance endpoint;
+        IRawEndpointInstance outEndpoint;
+        IRawEndpointInstance inEndpoint;
 
-        public DelayedRetryEndpoint(string delayQueueName, TimeSpan delayBy, string poisonMessageQueue = null, Action<TransportExtensions<T>> transportCustomization = null)
+        public DelayedRetryEndpoint(string storageQueueName, string inputQueueName, TimeSpan delayBy, string poisonMessageQueue = null, Action<TransportExtensions<T>> transportCustomization = null)
         {
             this.delayBy = delayBy;
-            this.delayQueueName = delayQueueName;
+            this.storageQueueName = storageQueueName;
+            this.inputQueueName = inputQueueName;
             this.transportCustomization = transportCustomization ?? EmptyTransportCustomization;
             this.poisonMessageQueue = poisonMessageQueue ?? "poison";
         }
 
-        public IErrorHandlingPolicy CreatePolicyObject(int immediateRetries, int delayedRetries, string errorQueue)
-        {
-            return new DelayedRetryErrorHandlingPolicy(immediateRetries, delayedRetries, delayBy, delayQueueName, errorQueue);
-        }
-
         public async Task Start()
         {
-            var config = RawEndpointConfiguration.Create(delayQueueName, OnMessage, poisonMessageQueue);
-            config.LimitMessageProcessingConcurrencyTo(1);
-            var transport = config.UseTransport<T>();
-            transportCustomization(transport);
-            config.CustomErrorHandlingPolicy(new RetryForeverPolicy());
-            config.AutoCreateQueue();
-            endpoint = await RawEndpoint.Start(config).ConfigureAwait(false);
+            var outConfig = RawEndpointConfiguration.Create(storageQueueName, OnOutgoingMessage, poisonMessageQueue);
+            outConfig.LimitMessageProcessingConcurrencyTo(1);
+            transportCustomization(outConfig.UseTransport<T>());
+            outConfig.CustomErrorHandlingPolicy(new RetryForeverPolicy());
+            outConfig.AutoCreateQueue();
+
+            var inConfig = RawEndpointConfiguration.Create(inputQueueName, OnIncomingMessage, poisonMessageQueue);
+            transportCustomization(inConfig.UseTransport<T>());
+            inConfig.CustomErrorHandlingPolicy(new RetryForeverPolicy());
+            inConfig.AutoCreateQueue();
+
+            outEndpoint = await RawEndpoint.Start(outConfig).ConfigureAwait(false);
+            inEndpoint = await RawEndpoint.Start(inConfig).ConfigureAwait(false);
+        }
+
+        Task OnIncomingMessage(MessageContext incomingMessage, IDispatchMessages dispatcher)
+        {
+            incomingMessage.Headers["NServiceBus.Raw.DelayedRetries.Due"] = (DateTime.UtcNow + delayBy).ToString("O");
+
+            var message = new OutgoingMessage(incomingMessage.MessageId, incomingMessage.Headers, incomingMessage.Body);
+            var operation = new TransportOperation(message, new UnicastAddressTag(storageQueueName));
+            return dispatcher.Dispatch(new TransportOperations(operation), incomingMessage.TransportTransaction, incomingMessage.Context);
         }
 
         static void EmptyTransportCustomization(TransportExtensions<T> transport)
         {
         }
 
-        static async Task OnMessage(MessageContext delayedMessage, IDispatchMessages dispatcher)
+        static async Task OnOutgoingMessage(MessageContext delayedMessage, IDispatchMessages dispatcher)
         {
             string dueHeader;
             string destination;
@@ -74,12 +87,12 @@
 
             var message = new OutgoingMessage(delayedMessage.MessageId, headers, delayedMessage.Body);
             var operation = new TransportOperation(message, new UnicastAddressTag(destination));
-            await dispatcher.Dispatch(new TransportOperations(operation), delayedMessage.TransportTransaction, delayedMessage.Context);
+            await dispatcher.Dispatch(new TransportOperations(operation), delayedMessage.TransportTransaction, delayedMessage.Context).ConfigureAwait(false);
         }
 
         public Task Stop()
         {
-            return endpoint.Stop();
+            return Task.WhenAll(outEndpoint.Stop(), inEndpoint.Stop());
         }
 
         class RetryForeverPolicy : IErrorHandlingPolicy

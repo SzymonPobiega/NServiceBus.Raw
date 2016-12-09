@@ -19,8 +19,8 @@ namespace NServiceBus.Raw.DelayedRetries.Demo
 
         static async Task Start()
         {
-            var delayedRetriesHandler = new DelayedRetryEndpoint<MsmqTransport>("FaultyEndpoint.Retries", TimeSpan.FromSeconds(3));
-            var delayedRetryPolicy = delayedRetriesHandler.CreatePolicyObject(2, 2, "error");
+            var delayedRetriesHandler = new DelayedRetryEndpoint<MsmqTransport>("FaultyEndpoint.Retries.Store", "FaultyEndpoint.Retries", TimeSpan.FromSeconds(3));
+            var delayedRetryPolicy = new DelayedRetryErrorHandlingPolicy(2, 2, "FaultyEndpoint.Retries", "error");
             await delayedRetriesHandler.Start();
 
             var faultyEndpointConfig = RawEndpointConfiguration.Create("FaultyEndpoint", OnMessage, "error");
