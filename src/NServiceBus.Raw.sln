@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo", "Demo\Demo.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Raw.DelayedRetries", "NServiceBus.Raw.DelayedRetries\NServiceBus.Raw.DelayedRetries.csproj", "{610008F6-93CD-4D0F-B1C7-1461C3C5C3B8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Raw.DelayedRetries.Demo", "NServiceBus.Raw.DelayedRetries.Demo\NServiceBus.Raw.DelayedRetries.Demo.csproj", "{8DA0FBFD-D086-46F4-9013-70E18A4BB8F5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demos", "Demos", "{293D4593-5DC3-47FA-A9EE-EA1195441E3F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,8 +31,16 @@ Global
 		{610008F6-93CD-4D0F-B1C7-1461C3C5C3B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{610008F6-93CD-4D0F-B1C7-1461C3C5C3B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{610008F6-93CD-4D0F-B1C7-1461C3C5C3B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DA0FBFD-D086-46F4-9013-70E18A4BB8F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DA0FBFD-D086-46F4-9013-70E18A4BB8F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DA0FBFD-D086-46F4-9013-70E18A4BB8F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DA0FBFD-D086-46F4-9013-70E18A4BB8F5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{915D307E-766A-42C2-972A-624E5AE0E8D7} = {293D4593-5DC3-47FA-A9EE-EA1195441E3F}
+		{8DA0FBFD-D086-46F4-9013-70E18A4BB8F5} = {293D4593-5DC3-47FA-A9EE-EA1195441E3F}
 	EndGlobalSection
 EndGlobal
