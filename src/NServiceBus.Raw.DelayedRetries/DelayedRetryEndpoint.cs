@@ -14,8 +14,8 @@
         string inputQueueName;
         Action<TransportExtensions<T>> transportCustomization;
         string poisonMessageQueue;
-        IRawEndpointInstance outEndpoint;
-        IRawEndpointInstance inEndpoint;
+        IReceivingRawEndpoint outEndpoint;
+        IReceivingRawEndpoint inEndpoint;
 
         public DelayedRetryEndpoint(string storageQueueName, string inputQueueName, TimeSpan delayBy, string poisonMessageQueue = null, Action<TransportExtensions<T>> transportCustomization = null)
         {

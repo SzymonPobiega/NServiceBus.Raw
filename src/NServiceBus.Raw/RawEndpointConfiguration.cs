@@ -8,6 +8,8 @@ using NServiceBus.Transport;
 
 namespace NServiceBus.Raw
 {
+    using Extensibility;
+
     /// <summary>
     /// Configuration used to create a raw endpoint instance.
     /// </summary>
@@ -61,6 +63,11 @@ namespace NServiceBus.Raw
                 Settings.Set("NServiceBus.Raw.PoisonMessageQueue", poisonMessageQueue);
                 Settings.SetDefault<IErrorHandlingPolicy>(new DefaultErrorHandlingPolicy(poisonMessageQueue, 5));
             }
+        }
+
+        public void InterceptDispatching(Func<TransportOperations, TransportTransaction, ContextBag, Func<TransportOperations, TransportTransaction, ContextBag, Task>, Task> interceptor)
+        {
+            
         }
 
         /// <summary>

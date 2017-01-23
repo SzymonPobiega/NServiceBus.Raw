@@ -53,8 +53,10 @@
     <Compile Include="IErrorHandlingPolicy.cs" />
     <Compile Include="IErrorHandlingPolicyContext.cs" />
     <Compile Include="InitializableRawEndpoint.cs" />
-    <Compile Include="IRawEndpointInstance.cs" />
+    <Compile Include="IReceivingRawEndpoint.cs" />
+    <Compile Include="IRawEndpoint.cs" />
     <Compile Include="IStartableRawEndpoint.cs" />
+    <Compile Include="IStoppableRawEnedpoint.cs" />
     <Compile Include="Properties\Resharper.Annotations.g.cs" />
     <Compile Include="RawCriticalError.cs" />
     <Compile Include="RawEndpoint.cs" />
@@ -63,6 +65,7 @@
     <Compile Include="RawTransportReceiver.cs" />
     <Compile Include="RunningRawEndpointInstance.cs" />
     <Compile Include="StartableRawEndpoint.cs" />
+    <Compile Include="StoppableRawEndpoint.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

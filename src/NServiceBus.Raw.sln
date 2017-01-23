@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demos", "Demos", "{293D4593
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Raw.DelayedRetries.RegularEndpointBoltOnDemo", "NServiceBus.Raw.DelayedRetries.RegularEndpointBoltOnDemo\NServiceBus.Raw.DelayedRetries.RegularEndpointBoltOnDemo.csproj", "{8CB1F9B8-0A8D-4C53-A068-971F15039F4F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Raw.ExactlyOnceSending", "NServiceBus.Raw.ExactlyOnceSending\NServiceBus.Raw.ExactlyOnceSending.csproj", "{40FF4EC6-C0BE-42DC-AD77-A537F41C75BF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,10 @@ Global
 		{8CB1F9B8-0A8D-4C53-A068-971F15039F4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8CB1F9B8-0A8D-4C53-A068-971F15039F4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8CB1F9B8-0A8D-4C53-A068-971F15039F4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40FF4EC6-C0BE-42DC-AD77-A537F41C75BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40FF4EC6-C0BE-42DC-AD77-A537F41C75BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40FF4EC6-C0BE-42DC-AD77-A537F41C75BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40FF4EC6-C0BE-42DC-AD77-A537F41C75BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

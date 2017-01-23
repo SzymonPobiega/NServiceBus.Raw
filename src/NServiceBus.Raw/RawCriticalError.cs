@@ -53,12 +53,16 @@ namespace NServiceBus.Raw
         {
             Task.Run(() =>
             {
-                var context = new CriticalErrorContext(endpoint.Stop, errorMessage, exception);
+                var context = new CriticalErrorContext(async () =>
+                {
+                    var stoppable = await endpoint.StopReceiving().ConfigureAwait(false);
+                    await stoppable.Stop().ConfigureAwait(false);
+                }, errorMessage, exception);
                 return criticalErrorAction(context);
             });
         }
 
-        internal void SetEndpoint(IRawEndpointInstance endpointInstance)
+        internal void SetEndpoint(IReceivingRawEndpoint endpointInstance)
         {
             lock (endpointCriticalLock)
             {
@@ -74,7 +78,7 @@ namespace NServiceBus.Raw
         Func<CriticalErrorContext, Task> criticalErrorAction;
 
         List<LatentCritical> criticalErrors = new List<LatentCritical>();
-        IRawEndpointInstance endpoint;
+        IReceivingRawEndpoint endpoint;
         object endpointCriticalLock = new object();
 
         class LatentCritical

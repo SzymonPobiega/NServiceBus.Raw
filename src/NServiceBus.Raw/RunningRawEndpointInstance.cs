@@ -1,4 +1,3 @@
-using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus.Extensibility;
 using NServiceBus.Logging;
@@ -7,7 +6,7 @@ using NServiceBus.Transport;
 
 namespace NServiceBus.Raw
 {
-    class RunningRawEndpointInstance : IRawEndpointInstance
+    class RunningRawEndpointInstance : IReceivingRawEndpoint
     {
         public RunningRawEndpointInstance(SettingsHolder settings, RawTransportReceiver receiver, TransportInfrastructure transportInfrastructure, IDispatchMessages dispatcher)
         {
@@ -17,47 +16,32 @@ namespace NServiceBus.Raw
             this.dispatcher = dispatcher;
         }
 
-        public async Task Stop()
-        {
-            if (stopped)
-            {
-                return;
-            }
-
-            await stopSemaphore.WaitAsync().ConfigureAwait(false);
-
-            try
-            {
-                if (stopped)
-                {
-                    return;
-                }
-
-                Log.Info("Initiating shutdown.");
-
-                await StopReceiver().ConfigureAwait(false);
-                await transportInfrastructure.Stop().ConfigureAwait(false);
-                settings.Clear();
-
-                stopped = true;
-                Log.Info("Shutdown complete.");
-            }
-            finally
-            {
-                stopSemaphore.Release();
-            }
-        }
-
-        public Task SendRaw(TransportOperations outgoingMessages, TransportTransaction transaction, ContextBag context)
+        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, ContextBag context)
         {
             return dispatcher.Dispatch(outgoingMessages, transaction, context);
         }
 
-        async Task StopReceiver()
+        public string ToTransportAddress(LogicalAddress logicalAddress)
         {
-            Log.Debug("Stopping receiver");
+            return transportInfrastructure.ToTransportAddress(logicalAddress);
+        }
+
+        public async Task<IStoppableRawEnedpoint> StopReceiving()
+        {
+            Log.Info("Stopping receiver.");
             await receiver.Stop().ConfigureAwait(false);
-            Log.Debug("Stopped receiver");
+            Log.Info("Receiver stopped.");
+            return new StoppableRawEndpoint(transportInfrastructure, settings);
+        }
+
+        public string TransportAddress => settings.LocalAddress();
+        public string EndpointName => settings.EndpointName();
+        public ReadOnlySettings Settings => settings;
+
+        public async Task Stop()
+        {
+            var stoppable = await StopReceiving().ConfigureAwait(false);
+            await stoppable.Stop();
         }
 
         TransportInfrastructure transportInfrastructure;
@@ -65,9 +49,6 @@ namespace NServiceBus.Raw
 
         SettingsHolder settings;
         RawTransportReceiver receiver;
-
-        volatile bool stopped;
-        SemaphoreSlim stopSemaphore = new SemaphoreSlim(1);
 
         static ILog Log = LogManager.GetLogger<RunningRawEndpointInstance>();
     }

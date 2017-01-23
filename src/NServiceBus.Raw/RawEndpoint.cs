@@ -22,7 +22,7 @@ namespace NServiceBus.Raw
         /// Creates and starts a new endpoint based on the provided configuration.
         /// </summary>
         /// <param name="configuration">Configuration.</param>
-        public static async Task<IRawEndpointInstance> Start(RawEndpointConfiguration configuration)
+        public static async Task<IReceivingRawEndpoint> Start(RawEndpointConfiguration configuration)
         {
             var initializable = await Create(configuration).ConfigureAwait(false);
             return await initializable.Start().ConfigureAwait(false);

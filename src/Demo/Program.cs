@@ -44,7 +44,7 @@
                 request, 
                 new UnicastAddressTag("Receiver"));
 
-            await sender.SendRaw(
+            await sender.Dispatch(
                 new TransportOperations(operation), 
                 new TransportTransaction(), 
                 new ContextBag())

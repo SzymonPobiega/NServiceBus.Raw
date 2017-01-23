@@ -7,6 +7,8 @@ using NServiceBus.Transport;
 
 namespace NServiceBus.Raw
 {
+    using Extensibility;
+
     class StartableRawEndpoint : IStartableRawEndpoint
     {
         public StartableRawEndpoint(SettingsHolder settings, TransportInfrastructure transportInfrastructure, RawCriticalError criticalError, IPushMessages messagePump, IDispatchMessages dispatcher, Func<MessageContext, IDispatchMessages, Task> onMessage)
@@ -19,7 +21,7 @@ namespace NServiceBus.Raw
             this.transportInfrastructure = transportInfrastructure;
         }
 
-        public async Task<IRawEndpointInstance> Start()
+        public async Task<IReceivingRawEndpoint> Start()
         {
             await transportInfrastructure.Start().ConfigureAwait(false);
 
@@ -39,6 +41,20 @@ namespace NServiceBus.Raw
                 StartReceiver(receiver);
             }
             return runningInstance;
+        }
+
+        public string TransportAddress => settings.LocalAddress();
+        public string EndpointName => settings.EndpointName();
+        public ReadOnlySettings Settings => settings;
+
+        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, ContextBag context)
+        {
+            return dispatcher.Dispatch(outgoingMessages, transaction, context);
+        }
+
+        public string ToTransportAddress(LogicalAddress logicalAddress)
+        {
+            return transportInfrastructure.ToTransportAddress(logicalAddress);
         }
 
         static void StartReceiver(RawTransportReceiver receiver)
@@ -91,14 +107,6 @@ namespace NServiceBus.Raw
             var receiver = new RawTransportReceiver(messagePump, dispatcher, onMessage, pushSettings, dequeueLimitations, criticalError, 
                 new RawEndpointErrorHandlingPolicy(settings, dispatcher, errorHandlingPolicy));
             return receiver;
-        }
-
-        int GetImmediateRetryCount()
-        {
-            int retryCount;
-            return settings.TryGet("RetryCount", out retryCount) 
-                ? retryCount 
-                : 5;
         }
 
         PushRuntimeSettings GetDequeueLimitationsForReceivePipeline()

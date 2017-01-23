@@ -37,7 +37,7 @@ namespace NServiceBus.Raw.DelayedRetries.Demo
 
                 var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
                 var operation = new TransportOperation(message, new UnicastAddressTag("FaultyEndpoint"));
-                await endpoint.SendRaw(new TransportOperations(operation), new TransportTransaction(), new ContextBag());
+                await endpoint.Dispatch(new TransportOperations(operation), new TransportTransaction(), new ContextBag());
             }
         }
 
