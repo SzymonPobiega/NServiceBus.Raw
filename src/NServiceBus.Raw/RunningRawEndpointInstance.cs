@@ -28,9 +28,12 @@ namespace NServiceBus.Raw
 
         public async Task<IStoppableRawEnedpoint> StopReceiving()
         {
-            Log.Info("Stopping receiver.");
-            await receiver.Stop().ConfigureAwait(false);
-            Log.Info("Receiver stopped.");
+            if (receiver != null)
+            {
+                Log.Info("Stopping receiver.");
+                await receiver.Stop().ConfigureAwait(false);
+                Log.Info("Receiver stopped.");
+            }
             return new StoppableRawEndpoint(transportInfrastructure, settings);
         }
 
