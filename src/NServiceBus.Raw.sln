@@ -1,21 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.6
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Raw", "NServiceBus.Raw\NServiceBus.Raw.csproj", "{9141A209-397A-4A8B-AE1B-F05AD938033C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo", "Demo\Demo.csproj", "{915D307E-766A-42C2-972A-624E5AE0E8D7}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Raw.DelayedRetries", "NServiceBus.Raw.DelayedRetries\NServiceBus.Raw.DelayedRetries.csproj", "{610008F6-93CD-4D0F-B1C7-1461C3C5C3B8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Raw.DelayedRetries.Demo", "NServiceBus.Raw.DelayedRetries.Demo\NServiceBus.Raw.DelayedRetries.Demo.csproj", "{8DA0FBFD-D086-46F4-9013-70E18A4BB8F5}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demos", "Demos", "{293D4593-5DC3-47FA-A9EE-EA1195441E3F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Raw.DelayedRetries.RegularEndpointBoltOnDemo", "NServiceBus.Raw.DelayedRetries.RegularEndpointBoltOnDemo\NServiceBus.Raw.DelayedRetries.RegularEndpointBoltOnDemo.csproj", "{8CB1F9B8-0A8D-4C53-A068-971F15039F4F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Raw.ExactlyOnceSending", "NServiceBus.Raw.ExactlyOnceSending\NServiceBus.Raw.ExactlyOnceSending.csproj", "{40FF4EC6-C0BE-42DC-AD77-A537F41C75BF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AcceptanceTests", "AcceptanceTests\AcceptanceTests.csproj", "{062ED1A3-47C9-4442-B9A4-C6BD140B23FC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,33 +19,16 @@ Global
 		{9141A209-397A-4A8B-AE1B-F05AD938033C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9141A209-397A-4A8B-AE1B-F05AD938033C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9141A209-397A-4A8B-AE1B-F05AD938033C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{915D307E-766A-42C2-972A-624E5AE0E8D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{915D307E-766A-42C2-972A-624E5AE0E8D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{915D307E-766A-42C2-972A-624E5AE0E8D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{915D307E-766A-42C2-972A-624E5AE0E8D7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{610008F6-93CD-4D0F-B1C7-1461C3C5C3B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{610008F6-93CD-4D0F-B1C7-1461C3C5C3B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{610008F6-93CD-4D0F-B1C7-1461C3C5C3B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{610008F6-93CD-4D0F-B1C7-1461C3C5C3B8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8DA0FBFD-D086-46F4-9013-70E18A4BB8F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8DA0FBFD-D086-46F4-9013-70E18A4BB8F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8DA0FBFD-D086-46F4-9013-70E18A4BB8F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8DA0FBFD-D086-46F4-9013-70E18A4BB8F5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8CB1F9B8-0A8D-4C53-A068-971F15039F4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8CB1F9B8-0A8D-4C53-A068-971F15039F4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8CB1F9B8-0A8D-4C53-A068-971F15039F4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8CB1F9B8-0A8D-4C53-A068-971F15039F4F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{40FF4EC6-C0BE-42DC-AD77-A537F41C75BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{40FF4EC6-C0BE-42DC-AD77-A537F41C75BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{40FF4EC6-C0BE-42DC-AD77-A537F41C75BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{40FF4EC6-C0BE-42DC-AD77-A537F41C75BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{062ED1A3-47C9-4442-B9A4-C6BD140B23FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{062ED1A3-47C9-4442-B9A4-C6BD140B23FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{062ED1A3-47C9-4442-B9A4-C6BD140B23FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{062ED1A3-47C9-4442-B9A4-C6BD140B23FC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{915D307E-766A-42C2-972A-624E5AE0E8D7} = {293D4593-5DC3-47FA-A9EE-EA1195441E3F}
-		{8DA0FBFD-D086-46F4-9013-70E18A4BB8F5} = {293D4593-5DC3-47FA-A9EE-EA1195441E3F}
-		{8CB1F9B8-0A8D-4C53-A068-971F15039F4F} = {293D4593-5DC3-47FA-A9EE-EA1195441E3F}
 	EndGlobalSection
 EndGlobal
