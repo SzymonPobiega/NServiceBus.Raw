@@ -26,7 +26,7 @@ namespace NServiceBus.Raw
             return transportInfrastructure.ToTransportAddress(logicalAddress);
         }
 
-        public async Task<IStoppableRawEnedpoint> StopReceiving()
+        public async Task<IStoppableRawEndpoint> StopReceiving()
         {
             if (receiver != null)
             {
