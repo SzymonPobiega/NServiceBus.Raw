@@ -5,7 +5,7 @@ namespace NServiceBus.Raw
     /// <summary>
     /// Represents an endpoint in the shutdown phase.
     /// </summary>
-    public interface IStoppableRawEnedpoint
+    public interface IStoppableRawEndpoint
     {
         /// <summary>
         /// Stops the endpoint.

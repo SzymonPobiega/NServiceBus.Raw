@@ -8,16 +8,14 @@ using NServiceBus.Transport;
 
 namespace NServiceBus.Raw
 {
-    using Extensibility;
-
     /// <summary>
     /// Configuration used to create a raw endpoint instance.
     /// </summary>
     public class RawEndpointConfiguration
     {
         Func<MessageContext, IDispatchMessages, Task> onMessage;
-        internal SettingsHolder Settings = new SettingsHolder();
 
+        
         /// <summary>
         /// Creates a send-only raw endpoint config.
         /// </summary>
@@ -61,14 +59,15 @@ namespace NServiceBus.Raw
             if (!sendOnly)
             {
                 Settings.Set("NServiceBus.Raw.PoisonMessageQueue", poisonMessageQueue);
+                Settings.Set("errorQueue", poisonMessageQueue); //Hack for MSMQ
                 Settings.SetDefault<IErrorHandlingPolicy>(new DefaultErrorHandlingPolicy(poisonMessageQueue, 5));
             }
         }
 
-        public void InterceptDispatching(Func<TransportOperations, TransportTransaction, ContextBag, Func<TransportOperations, TransportTransaction, ContextBag, Task>, Task> interceptor)
-        {
-            
-        }
+        /// <summary>
+        /// Exposes raw settings object.
+        /// </summary>
+        public SettingsHolder Settings { get; } = new SettingsHolder();
 
         /// <summary>
         /// Instructs the endpoint to use a custom error handling policy.

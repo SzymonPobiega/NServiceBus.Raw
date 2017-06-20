@@ -5,7 +5,7 @@ namespace NServiceBus.Raw
     using Settings;
     using Transport;
 
-    class StoppableRawEndpoint : IStoppableRawEnedpoint
+    class StoppableRawEndpoint : IStoppableRawEndpoint
     {
         TransportInfrastructure transportInfrastructure;
         SettingsHolder settings;
