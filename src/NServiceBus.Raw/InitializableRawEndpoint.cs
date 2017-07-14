@@ -33,7 +33,6 @@ namespace NServiceBus.Raw
             if (!settings.GetOrDefault<bool>("Endpoint.SendOnly"))
             {
                 var receiveInfrastructure = transportInfrastructure.ConfigureReceiveInfrastructure();
-                messagePump = receiveInfrastructure.MessagePumpFactory();
 
                 var queueCreator = receiveInfrastructure.QueueCreatorFactory();
 
@@ -46,6 +45,8 @@ namespace NServiceBus.Raw
 
                 var mainAddress = transportInfrastructure.ToTransportAddress(mainLogicalAddress);
                 settings.SetDefault("NServiceBus.SharedQueue", mainAddress);
+
+                messagePump = receiveInfrastructure.MessagePumpFactory();
 
                 if (settings.GetOrDefault<bool>("NServiceBus.Raw.CreateQueue"))
                 {
