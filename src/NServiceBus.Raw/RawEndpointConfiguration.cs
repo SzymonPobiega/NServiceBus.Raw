@@ -49,8 +49,6 @@ namespace NServiceBus.Raw
             Settings.Set("NServiceBus.Routing.EndpointName", endpointName);
             Settings.Set<Conventions>(new Conventions()); //Hack for ASB
 
-            Settings.SetDefault<IConfigurationSource>(new DefaultConfigurationSource());
-
             Settings.Set<QueueBindings>(new QueueBindings());
 
             Settings.SetDefault("Endpoint.SendOnly", false);

@@ -1,13 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFrameworks>net452;netstandard2.0</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="6.3.4" />
-    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="6.3.4" />
+    <PackageReference Include="NServiceBus" Version="7.0.0-alpharelease0051" />
+    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="7.0.0-alpharelease0051" />
     <PackageReference Include="NUnit" Version="3.7.1" />
-    <ProjectReference Include="..\NServiceBus.Raw.DelayedRetries\NServiceBus.Raw.DelayedRetries.csproj" />
     <ProjectReference Include="..\NServiceBus.Raw\NServiceBus.Raw.csproj" />
-    <Reference Include="System.Messaging" />
   </ItemGroup>
 </Project>

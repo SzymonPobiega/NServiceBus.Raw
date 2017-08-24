@@ -49,7 +49,7 @@
 
             var message = new OutgoingMessage(incomingMessage.MessageId, incomingMessage.Headers, incomingMessage.Body);
             var operation = new TransportOperation(message, new UnicastAddressTag(storageQueueName));
-            return dispatcher.Dispatch(new TransportOperations(operation), incomingMessage.TransportTransaction, incomingMessage.Context);
+            return dispatcher.Dispatch(new TransportOperations(operation), incomingMessage.TransportTransaction, incomingMessage.Extensions);
         }
 
         static void EmptyTransportCustomization(TransportExtensions<T> transport)
@@ -87,7 +87,7 @@
 
             var message = new OutgoingMessage(delayedMessage.MessageId, headers, delayedMessage.Body);
             var operation = new TransportOperation(message, new UnicastAddressTag(destination));
-            await dispatcher.Dispatch(new TransportOperations(operation), delayedMessage.TransportTransaction, delayedMessage.Context).ConfigureAwait(false);
+            await dispatcher.Dispatch(new TransportOperations(operation), delayedMessage.TransportTransaction, delayedMessage.Extensions).ConfigureAwait(false);
         }
 
         public Task Stop()

@@ -21,7 +21,7 @@ public class When_sending_to_another_endpoint : NServiceBusAcceptanceTest
 
         var result = await Scenario.Define<Context>()
             .WithRawEndpoint("Sender",
-                (context, scenario, dispatcher) => Task.CompletedTask,
+                (context, scenario, dispatcher) => Task.FromResult(0),
                 (endpoint, scenario) => endpoint.Send("Receiver", headers, body))
             .WithRawEndpoint("Receiver",
                 (context, scenario, dispatcher) =>
@@ -31,7 +31,7 @@ public class When_sending_to_another_endpoint : NServiceBusAcceptanceTest
                         scenario.MessageReceived = true;
                         scenario.Message = Encoding.UTF8.GetString(context.Body);
                     }
-                    return Task.CompletedTask;
+                    return Task.FromResult(0);
                 })
             .Done(c => c.MessageReceived)
             .Run();

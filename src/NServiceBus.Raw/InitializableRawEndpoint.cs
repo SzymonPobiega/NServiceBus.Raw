@@ -66,7 +66,16 @@ namespace NServiceBus.Raw
             string username;
             return settings.TryGet("NServiceBus.Raw.Identity", out username)
                 ? username
-                : WindowsIdentity.GetCurrent().Name;
+                : DefaultName();
+        }
+
+        static string DefaultName()
+        {
+#if NET452
+            return WindowsIdentity.GetCurrent().Name;
+#else
+            return null;
+#endif
         }
 
         string GetConnectionString(TransportDefinition transportDefinition)

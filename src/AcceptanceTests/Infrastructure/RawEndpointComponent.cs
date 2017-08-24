@@ -55,9 +55,9 @@ class RawEndpointComponent<TContext> : IComponentBehavior
 
         if (!config.Settings.TryGet(out TransportDefinition _))
         {
-            config.UseTransport<MsmqTransport>();
+            config.UseTransport<LearningTransport>();
         }
-        return Task.FromResult<ComponentRunner>(new Runner(config, name, endpoint => onStarted != null ? onStarted(endpoint, typedScenarioContext) : Task.CompletedTask));
+        return Task.FromResult<ComponentRunner>(new Runner(config, name, endpoint => onStarted != null ? onStarted(endpoint, typedScenarioContext) : Task.FromResult(0)));
     }
 
     class Runner : ComponentRunner
