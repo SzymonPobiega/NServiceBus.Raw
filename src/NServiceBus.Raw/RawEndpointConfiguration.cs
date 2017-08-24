@@ -47,6 +47,7 @@ namespace NServiceBus.Raw
             Settings.Set("Endpoint.SendOnly", sendOnly);
             Settings.Set("TypesToScan", new Type[0]);
             Settings.Set("NServiceBus.Routing.EndpointName", endpointName);
+            Settings.Set<Conventions>(new Conventions()); //Hack for ASB
 
             Settings.SetDefault<IConfigurationSource>(new DefaultConfigurationSource());
 
