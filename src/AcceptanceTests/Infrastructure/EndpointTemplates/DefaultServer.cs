@@ -7,7 +7,6 @@
     using AcceptanceTesting.Support;
     using Configuration.AdvancedExtensibility;
     using Features;
-    using Config.ConfigurationSource;
 
     public class DefaultServer : IEndpointSetupTemplate
     {

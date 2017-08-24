@@ -2,7 +2,6 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Transactions;
-using NServiceBus.Config.ConfigurationSource;
 using NServiceBus.Settings;
 using NServiceBus.Transport;
 

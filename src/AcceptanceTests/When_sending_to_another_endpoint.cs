@@ -26,7 +26,7 @@ public class When_sending_to_another_endpoint : NServiceBusAcceptanceTest
             .WithRawEndpoint("Receiver",
                 (context, scenario, dispatcher) =>
                 {
-                    if (context.Headers.TryGetValue("Secret", out string receivedSecret) && receivedSecret == secret.ToString())
+                    if (context.Headers.TryGetValue("Secret", out var receivedSecret) && receivedSecret == secret.ToString())
                     {
                         scenario.MessageReceived = true;
                         scenario.Message = Encoding.UTF8.GetString(context.Body);
