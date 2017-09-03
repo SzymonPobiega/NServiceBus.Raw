@@ -14,7 +14,6 @@ namespace NServiceBus.Raw
     {
         Func<MessageContext, IDispatchMessages, Task> onMessage;
 
-        
         /// <summary>
         /// Creates a send-only raw endpoint config.
         /// </summary>

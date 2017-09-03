@@ -7,7 +7,6 @@ using NServiceBus.Transport;
 
 namespace NServiceBus.Raw
 {
-    using System.Security.Principal;
 
     class InitializableRawEndpoint
     {
@@ -63,8 +62,7 @@ namespace NServiceBus.Raw
 
         string GetInstallationUserName()
         {
-            string username;
-            return settings.TryGet("NServiceBus.Raw.Identity", out username)
+            return settings.TryGet("NServiceBus.Raw.Identity", out string username)
                 ? username
                 : DefaultName();
         }
@@ -72,7 +70,7 @@ namespace NServiceBus.Raw
         static string DefaultName()
         {
 #if NET452
-            return WindowsIdentity.GetCurrent().Name;
+            return System.Security.Principal.WindowsIdentity.GetCurrent().Name;
 #else
             return null;
 #endif
@@ -86,8 +84,7 @@ namespace NServiceBus.Raw
 
         RawCriticalError CreateCriticalErrorHandler()
         {
-            Func<ICriticalErrorContext, Task> errorAction;
-            settings.TryGet("onCriticalErrorAction", out errorAction);
+            settings.TryGet("onCriticalErrorAction", out Func<ICriticalErrorContext, Task> errorAction);
             return new RawCriticalError(errorAction);
         }
 

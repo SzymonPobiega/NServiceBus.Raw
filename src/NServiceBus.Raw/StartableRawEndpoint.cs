@@ -104,22 +104,21 @@ namespace NServiceBus.Raw
             var pushSettings = new PushSettings(settings.LocalAddress(), poisonMessageQueue, purgeOnStartup, requiredTransactionSupport);
             var dequeueLimitations = GetDequeueLimitationsForReceivePipeline();
             var errorHandlingPolicy = settings.Get<IErrorHandlingPolicy>();
-            var receiver = new RawTransportReceiver(messagePump, dispatcher, onMessage, pushSettings, dequeueLimitations, criticalError, 
+            var receiver = new RawTransportReceiver(messagePump, dispatcher, onMessage, pushSettings, dequeueLimitations, criticalError,
                 new RawEndpointErrorHandlingPolicy(settings, dispatcher, errorHandlingPolicy));
             return receiver;
         }
 
         PushRuntimeSettings GetDequeueLimitationsForReceivePipeline()
         {
-            int concurrencyLimit;
-            if (settings.TryGet("MaxConcurrency", out concurrencyLimit))
+            if (settings.TryGet("MaxConcurrency", out int concurrencyLimit))
             {
                 return new PushRuntimeSettings(concurrencyLimit);
             }
 
             return PushRuntimeSettings.Default;
         }
-        
+
         SettingsHolder settings;
         TransportInfrastructure transportInfrastructure;
         RawCriticalError criticalError;
