@@ -2,6 +2,7 @@
 <Project>
 
   <PropertyGroup>
+    <LangVersion>7.1</LangVersion>
     <Authors>Szymon Pobiega</Authors>
     <Company>Szymon Pobiega Consulting</Company>
     <PackageLicenseUrl>https://github.com/SzymonPobiega/NServiceBus.Raw/blob/master/LICENSE.md</PackageLicenseUrl>
