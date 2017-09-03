@@ -3,10 +3,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>net452;netstandard2.0</TargetFrameworks>
-    <AssemblyName>NServiceBus.Raw</AssemblyName>
-    <RootNamespace>NServiceBus.Raw</RootNamespace>
-    <AssemblyTitle>NServiceBus.Raw</AssemblyTitle>
-    <Product>NServiceBus.Raw</Product>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>NServiceBus.Raw.snk</AssemblyOriginatorKeyFile>
     <OutputPath>..\..\binaries\</OutputPath>
