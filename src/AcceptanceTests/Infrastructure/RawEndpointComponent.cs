@@ -69,7 +69,7 @@ class RawEndpointComponent<TContext> : IComponentBehavior
         public Runner(RawEndpointConfiguration config, string name, Func<IReceivingRawEndpoint, Task> onStarted)
         {
             this.config = config;
-            this.Name = name;
+            Name = name;
             this.onStarted = onStarted;
         }
 
