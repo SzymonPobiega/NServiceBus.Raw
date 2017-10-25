@@ -25,6 +25,14 @@ namespace NServiceBus.Raw
             var transportInfrastructure = transportDefinition.Initialize(settings, connectionString);
             settings.Set<TransportInfrastructure>(transportInfrastructure);
 
+            var mainInstance = transportInfrastructure.BindToLocalEndpoint(new EndpointInstance(settings.EndpointName()));
+            var baseQueueName = settings.GetOrDefault<string>("BaseInputQueueName") ?? settings.EndpointName();
+            var mainLogicalAddress = LogicalAddress.CreateLocalAddress(baseQueueName, mainInstance.Properties);
+            var mainAddress = transportInfrastructure.ToTransportAddress(mainLogicalAddress);
+
+            settings.SetDefault("NServiceBus.SharedQueue", mainAddress);
+            settings.SetDefault<LogicalAddress>(mainLogicalAddress);
+
             var sendInfrastructure = transportInfrastructure.ConfigureSendInfrastructure();
             var dispatcher = sendInfrastructure.DispatcherFactory();
 
@@ -32,19 +40,7 @@ namespace NServiceBus.Raw
             if (!settings.GetOrDefault<bool>("Endpoint.SendOnly"))
             {
                 var receiveInfrastructure = transportInfrastructure.ConfigureReceiveInfrastructure();
-
                 var queueCreator = receiveInfrastructure.QueueCreatorFactory();
-
-                var baseQueueName = settings.GetOrDefault<string>("BaseInputQueueName") ?? settings.EndpointName();
-
-                var mainInstance = transportInfrastructure.BindToLocalEndpoint(new EndpointInstance(settings.EndpointName()));
-
-                var mainLogicalAddress = LogicalAddress.CreateLocalAddress(baseQueueName, mainInstance.Properties);
-                settings.SetDefault<LogicalAddress>(mainLogicalAddress);
-
-                var mainAddress = transportInfrastructure.ToTransportAddress(mainLogicalAddress);
-                settings.SetDefault("NServiceBus.SharedQueue", mainAddress);
-
                 messagePump = receiveInfrastructure.MessagePumpFactory();
 
                 if (settings.GetOrDefault<bool>("NServiceBus.Raw.CreateQueue"))

@@ -4,10 +4,11 @@ using System.Text;
 using System.Threading.Tasks;
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTests;
+using NServiceBus.Transport;
 using NUnit.Framework;
 
-[TestFixture]
-public class When_sending_to_another_endpoint : NServiceBusAcceptanceTest
+public abstract class When_sending_to_another_endpoint<TTransport> : NServiceBusAcceptanceTest<TTransport>
+    where TTransport : TransportDefinition, new()
 {
     [Test]
     public async Task It_receives_the_message()
@@ -20,10 +21,10 @@ public class When_sending_to_another_endpoint : NServiceBusAcceptanceTest
         var body = Encoding.UTF8.GetBytes("Hello world!");
 
         var result = await Scenario.Define<Context>()
-            .WithRawEndpoint("Sender",
+            .WithRawEndpoint<TTransport, Context>(SetupTransport, "Sender",
                 (context, scenario, dispatcher) => Task.FromResult(0),
                 (endpoint, scenario) => endpoint.Send("Receiver", headers, body))
-            .WithRawEndpoint("Receiver",
+            .WithRawEndpoint<TTransport, Context>(SetupTransport, "Receiver",
                 (context, scenario, dispatcher) =>
                 {
                     if (context.Headers.TryGetValue("Secret", out var receivedSecret) && receivedSecret == secret.ToString())

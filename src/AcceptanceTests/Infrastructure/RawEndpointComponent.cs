@@ -12,13 +12,22 @@ using NServiceBus.Transport;
 
 static class RawEndpointComponentExtensions
 {
-    public static IScenarioWithEndpointBehavior<TContext> WithRawEndpoint<TContext>(this IScenarioWithEndpointBehavior<TContext> scenario,
+    public static IScenarioWithEndpointBehavior<TContext> WithRawEndpoint<TTransport, TContext>(this IScenarioWithEndpointBehavior<TContext> scenario,
+        Action<TransportExtensions<TTransport>> customizeTransport,
         string name, Func<MessageContext, TContext, IDispatchMessages, Task> onMessage,
-        Func<IReceivingRawEndpoint, TContext, Task> onStarted = null, 
+        Func<IReceivingRawEndpoint, TContext, Task> onStarted = null,
         Action<RawEndpointConfiguration> configure = null)
         where TContext : ScenarioContext
+        where TTransport : TransportDefinition, new()
     {
-        var component = new RawEndpointComponent<TContext>(name, onMessage, onStarted, configure);
+        void configureWithTransport(RawEndpointConfiguration cfg)
+        {
+            configure?.Invoke(cfg);
+            var ext = cfg.UseTransport<TTransport>();
+            customizeTransport(ext);
+        }
+
+        var component = new RawEndpointComponent<TContext>(name, onMessage, onStarted, configureWithTransport);
         return scenario.WithComponent(component);
     }
 
@@ -47,16 +56,11 @@ class RawEndpointComponent<TContext> : IComponentBehavior
 
     public Task<ComponentRunner> CreateRunner(RunDescriptor run)
     {
-        var typedScenarioContext = (TContext) run.ScenarioContext;
+        var typedScenarioContext = (TContext)run.ScenarioContext;
 
         var config = RawEndpointConfiguration.Create(name, (c, d) => onMessage(c, typedScenarioContext, d), "poison");
         config.AutoCreateQueue();
-        configure?.Invoke(config);
-
-        if (!config.Settings.TryGet(out TransportDefinition _))
-        {
-            config.UseTransport<LearningTransport>();
-        }
+        configure(config);
         return Task.FromResult<ComponentRunner>(new Runner(config, name, endpoint => onStarted != null ? onStarted(endpoint, typedScenarioContext) : Task.FromResult(0)));
     }
 

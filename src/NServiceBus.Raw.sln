@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.3
+VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Raw", "NServiceBus.Raw\NServiceBus.Raw.csproj", "{9141A209-397A-4A8B-AE1B-F05AD938033C}"
 EndProject
@@ -11,6 +11,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		Directory.Build.targets = Directory.Build.targets
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AcceptanceTests.AzureServiceBus", "AcceptanceTests.AzureServiceBus\AcceptanceTests.AzureServiceBus.csproj", "{C1BEA3A6-1AA0-44B9-9ABE-BCDFA8776E2A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AcceptanceTests.Msmq", "AcceptanceTests.Msmq\AcceptanceTests.Msmq.csproj", "{2B9B9019-1C60-4536-8601-922EEBC95254}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AcceptanceTests.SqlServer", "AcceptanceTests.SqlServer\AcceptanceTests.SqlServer.csproj", "{670AEB80-B211-4BAA-A2F5-C57EEAF50709}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AcceptanceTests.Learning", "AcceptanceTests.Learning\AcceptanceTests.Learning.csproj", "{BF82ADE9-8BA4-426F-9D98-F3480E73F820}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AcceptanceTests.RabbitMQ", "AcceptanceTests.RabbitMQ\AcceptanceTests.RabbitMQ.csproj", "{72C9AF9E-AAB0-45AA-A638-9B4D87D84709}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,6 +36,26 @@ Global
 		{062ED1A3-47C9-4442-B9A4-C6BD140B23FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{062ED1A3-47C9-4442-B9A4-C6BD140B23FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{062ED1A3-47C9-4442-B9A4-C6BD140B23FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1BEA3A6-1AA0-44B9-9ABE-BCDFA8776E2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1BEA3A6-1AA0-44B9-9ABE-BCDFA8776E2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1BEA3A6-1AA0-44B9-9ABE-BCDFA8776E2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1BEA3A6-1AA0-44B9-9ABE-BCDFA8776E2A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B9B9019-1C60-4536-8601-922EEBC95254}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B9B9019-1C60-4536-8601-922EEBC95254}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B9B9019-1C60-4536-8601-922EEBC95254}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B9B9019-1C60-4536-8601-922EEBC95254}.Release|Any CPU.Build.0 = Release|Any CPU
+		{670AEB80-B211-4BAA-A2F5-C57EEAF50709}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{670AEB80-B211-4BAA-A2F5-C57EEAF50709}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{670AEB80-B211-4BAA-A2F5-C57EEAF50709}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{670AEB80-B211-4BAA-A2F5-C57EEAF50709}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF82ADE9-8BA4-426F-9D98-F3480E73F820}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF82ADE9-8BA4-426F-9D98-F3480E73F820}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF82ADE9-8BA4-426F-9D98-F3480E73F820}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF82ADE9-8BA4-426F-9D98-F3480E73F820}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72C9AF9E-AAB0-45AA-A638-9B4D87D84709}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72C9AF9E-AAB0-45AA-A638-9B4D87D84709}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72C9AF9E-AAB0-45AA-A638-9B4D87D84709}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72C9AF9E-AAB0-45AA-A638-9B4D87D84709}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
