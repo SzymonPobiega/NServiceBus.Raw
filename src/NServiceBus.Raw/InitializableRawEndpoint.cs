@@ -28,9 +28,7 @@ namespace NServiceBus.Raw
             var mainInstance = transportInfrastructure.BindToLocalEndpoint(new EndpointInstance(settings.EndpointName()));
             var baseQueueName = settings.GetOrDefault<string>("BaseInputQueueName") ?? settings.EndpointName();
             var mainLogicalAddress = LogicalAddress.CreateLocalAddress(baseQueueName, mainInstance.Properties);
-            var mainAddress = transportInfrastructure.ToTransportAddress(mainLogicalAddress);
-
-            settings.SetDefault("NServiceBus.SharedQueue", mainAddress);
+            var localAddress = transportInfrastructure.ToTransportAddress(mainLogicalAddress);
             settings.SetDefault<LogicalAddress>(mainLogicalAddress);
 
             var sendInfrastructure = transportInfrastructure.ConfigureSendInfrastructure();
@@ -46,13 +44,13 @@ namespace NServiceBus.Raw
                 if (settings.GetOrDefault<bool>("NServiceBus.Raw.CreateQueue"))
                 {
                     var bindings = new QueueBindings();
-                    bindings.BindReceiving(mainAddress);
+                    bindings.BindReceiving(localAddress);
                     bindings.BindReceiving(settings.Get<string>("NServiceBus.Raw.PoisonMessageQueue"));
                     await queueCreator.CreateQueueIfNecessary(bindings, GetInstallationUserName()).ConfigureAwait(false);
                 }
             }
 
-            var startableEndpoint = new StartableRawEndpoint(settings, transportInfrastructure, CreateCriticalErrorHandler(), messagePump, dispatcher, onMessage);
+            var startableEndpoint = new StartableRawEndpoint(settings, transportInfrastructure, CreateCriticalErrorHandler(), messagePump, dispatcher, onMessage, localAddress);
             return startableEndpoint;
         }
 

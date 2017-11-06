@@ -46,6 +46,7 @@ namespace NServiceBus.Raw
             Settings.Set("TypesToScan", new Type[0]);
             Settings.Set("NServiceBus.Routing.EndpointName", endpointName);
             Settings.Set<Conventions>(new Conventions()); //Hack for ASB
+            Settings.Set<StartupDiagnosticEntries>(new StartupDiagnosticEntries());
 
             Settings.Set<QueueBindings>(new QueueBindings());
 

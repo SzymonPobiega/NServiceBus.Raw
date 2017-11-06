@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using NServiceBus.Extensibility;
 using NServiceBus.Faults;
 using NServiceBus.Routing;
-using NServiceBus.Settings;
 using NServiceBus.Support;
 using NServiceBus.Transport;
 
@@ -17,16 +16,16 @@ namespace NServiceBus.Raw
         Dictionary<string, string> staticFaultMetadata;
         IErrorHandlingPolicy policy;
 
-        public RawEndpointErrorHandlingPolicy(ReadOnlySettings settings, IDispatchMessages dispatcher, IErrorHandlingPolicy policy)
+        public RawEndpointErrorHandlingPolicy(string endpointName, string localAddress, IDispatchMessages dispatcher, IErrorHandlingPolicy policy)
         {
             this.dispatcher = dispatcher;
             this.policy = policy;
 
             staticFaultMetadata = new Dictionary<string, string>
             {
-                {FaultsHeaderKeys.FailedQ, settings.LocalAddress()},
+                {FaultsHeaderKeys.FailedQ, localAddress},
                 {Headers.ProcessingMachine, RuntimeEnvironment.MachineName},
-                {Headers.ProcessingEndpoint, settings.EndpointName()},
+                {Headers.ProcessingEndpoint, endpointName},
             };
         }
 
