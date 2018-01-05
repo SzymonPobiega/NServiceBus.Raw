@@ -20,5 +20,10 @@ namespace NServiceBus.Raw
         /// Gets the error information.
         /// </summary>
         ErrorContext Error { get; }
+
+        /// <summary>
+        /// The queue from which the failed message has been received.
+        /// </summary>
+        string FailedQueue { get; }
     }
 }

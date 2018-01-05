@@ -12,12 +12,14 @@ namespace NServiceBus.Raw
 
     class RawEndpointErrorHandlingPolicy
     {
+        string localAddress;
         IDispatchMessages dispatcher;
         Dictionary<string, string> staticFaultMetadata;
         IErrorHandlingPolicy policy;
 
         public RawEndpointErrorHandlingPolicy(string endpointName, string localAddress, IDispatchMessages dispatcher, IErrorHandlingPolicy policy)
         {
+            this.localAddress = localAddress;
             this.dispatcher = dispatcher;
             this.policy = policy;
 
@@ -31,7 +33,7 @@ namespace NServiceBus.Raw
 
         public Task<ErrorHandleResult> OnError(ErrorContext errorContext)
         {
-            return policy.OnError(new Context(errorContext, MoveToErrorQueue), dispatcher);
+            return policy.OnError(new Context(localAddress, errorContext, MoveToErrorQueue), dispatcher);
         }
 
         async Task<ErrorHandleResult> MoveToErrorQueue(ErrorContext errorContext, string errorQueue, bool includeStandardHeaders)
@@ -63,10 +65,11 @@ namespace NServiceBus.Raw
         {
             Func<ErrorContext, string, bool, Task<ErrorHandleResult>> moveToErrorQueue;
 
-            public Context(ErrorContext error, Func<ErrorContext, string, bool, Task<ErrorHandleResult>> moveToErrorQueue)
+            public Context(string failedQueue, ErrorContext error, Func<ErrorContext, string, bool, Task<ErrorHandleResult>> moveToErrorQueue)
             {
                 this.moveToErrorQueue = moveToErrorQueue;
                 Error = error;
+                FailedQueue = failedQueue;
             }
 
             public Task<ErrorHandleResult> MoveToErrorQueue(string errorQueue, bool attachStandardFailureHeaders = true)
@@ -75,6 +78,7 @@ namespace NServiceBus.Raw
             }
 
             public ErrorContext Error { get; }
+            public string FailedQueue { get; }
         }
     }
 }
