@@ -19,20 +19,20 @@ public abstract class When_using_delayed_retries<TTransport> : NServiceBusAccept
 
         var result = await Scenario.Define<Context>()
             .WithRawEndpoint<TTransport, Context>(SetupTransport, "Endpoint",
-                (context, scenario, dispatcher) =>
+                onMessage:(context, scenario, dispatcher) =>
                 {
                     scenario.Attempts++;
                     throw new Exception("Boom!");
                 },
-                (endpoint, scenario) => endpoint.Send("Endpoint", headers, body),
-                config =>
+                onStarted: (endpoint, scenario) => endpoint.Send("Endpoint", headers, body),
+                configure: config =>
                 {
                     config.LimitMessageProcessingConcurrencyTo(1);
                     config.CustomErrorHandlingPolicy(new DelayedRetryErrorHandlingPolicy(0, 5, "DelayedRetries", "FailureSpy", TimeSpan.FromMilliseconds(100)));
                 })
             .WithDelayedRetryEndpointComponent<TTransport, Context>(SetupTransport, "DelayedRetries")
             .WithRawEndpoint<TTransport, Context>(SetupTransport, "FailureSpy",
-                (context, scenario, dispatcher) =>
+                onMessage: (context, scenario, dispatcher) =>
                 {
                     scenario.MessageMovedToErrorQueue = true;
                     return Task.FromResult(0);

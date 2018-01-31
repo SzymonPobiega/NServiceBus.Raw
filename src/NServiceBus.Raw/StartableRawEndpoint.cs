@@ -10,7 +10,7 @@ namespace NServiceBus.Raw
 
     class StartableRawEndpoint : IStartableRawEndpoint
     {
-        public StartableRawEndpoint(SettingsHolder settings, TransportInfrastructure transportInfrastructure, RawCriticalError criticalError, IPushMessages messagePump, IDispatchMessages dispatcher, Func<MessageContext, IDispatchMessages, Task> onMessage, string localAddress)
+        public StartableRawEndpoint(SettingsHolder settings, TransportInfrastructure transportInfrastructure, RawCriticalError criticalError, IPushMessages messagePump, IDispatchMessages dispatcher, IManageSubscriptions subscriptionManager, Func<MessageContext, IDispatchMessages, Task> onMessage, string localAddress)
         {
             this.criticalError = criticalError;
             this.messagePump = messagePump;
@@ -19,6 +19,7 @@ namespace NServiceBus.Raw
             this.localAddress = localAddress;
             this.settings = settings;
             this.transportInfrastructure = transportInfrastructure;
+            SubscriptionManager = subscriptionManager;
         }
 
         public async Task<IReceivingRawEndpoint> Start()
@@ -32,7 +33,7 @@ namespace NServiceBus.Raw
                 await InitializeReceiver(receiver).ConfigureAwait(false);
             }
 
-            var runningInstance = new RunningRawEndpointInstance(settings, receiver, transportInfrastructure, dispatcher, localAddress);
+            var runningInstance = new RunningRawEndpointInstance(settings, receiver, transportInfrastructure, dispatcher, SubscriptionManager, localAddress);
             // set the started endpoint on CriticalError to pass the endpoint to the critical error action
             criticalError.SetEndpoint(runningInstance);
 
@@ -42,6 +43,8 @@ namespace NServiceBus.Raw
             }
             return runningInstance;
         }
+
+        public IManageSubscriptions SubscriptionManager { get; }
 
         public string TransportAddress => localAddress;
         public string EndpointName => settings.EndpointName();

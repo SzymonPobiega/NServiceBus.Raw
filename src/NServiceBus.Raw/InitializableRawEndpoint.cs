@@ -48,10 +48,46 @@ namespace NServiceBus.Raw
                     bindings.BindReceiving(settings.Get<string>("NServiceBus.Raw.PoisonMessageQueue"));
                     await queueCreator.CreateQueueIfNecessary(bindings, GetInstallationUserName()).ConfigureAwait(false);
                 }
+
+                RegisterReceivingComponent(settings, localAddress);
             }
 
-            var startableEndpoint = new StartableRawEndpoint(settings, transportInfrastructure, CreateCriticalErrorHandler(), messagePump, dispatcher, onMessage, localAddress);
+            IManageSubscriptions subscriptionManager = null;
+            if (transportInfrastructure.OutboundRoutingPolicy.Publishes == OutboundRoutingType.Multicast ||
+                transportInfrastructure.OutboundRoutingPolicy.Sends == OutboundRoutingType.Multicast)
+            {
+                subscriptionManager = CreateSubscriptionManager(transportInfrastructure);
+            }
+
+            var startableEndpoint = new StartableRawEndpoint(settings, transportInfrastructure, CreateCriticalErrorHandler(), messagePump, dispatcher, subscriptionManager, onMessage, localAddress);
             return startableEndpoint;
+        }
+
+        static IManageSubscriptions CreateSubscriptionManager(TransportInfrastructure transportInfra)
+        {
+            var subscriptionInfra = transportInfra.ConfigureSubscriptionInfrastructure();
+            var factoryProperty = typeof(TransportSubscriptionInfrastructure).GetProperty("SubscriptionManagerFactory", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var factoryInstance = (Func<IManageSubscriptions>)factoryProperty.GetValue(subscriptionInfra, new object[0]);
+            return factoryInstance();
+        }
+
+        static void RegisterReceivingComponent(SettingsHolder settings, string localAddress)
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.CreateInstance;
+            var parameters = new[]
+            {
+                typeof(LogicalAddress),
+                typeof(string),
+                typeof(string),
+                typeof(string),
+                typeof(TransportTransactionMode),
+                typeof(PushRuntimeSettings),
+                typeof(bool)
+            };
+            var ctor = typeof(Endpoint).Assembly.GetType("NServiceBus.ReceiveConfiguration", true).GetConstructor(flags, null, parameters, null);
+
+            var receiveConfig = ctor.Invoke(new object[] { null, localAddress, localAddress, null, null, null, false });
+            settings.Set("NServiceBus.ReceiveConfiguration", receiveConfig);
         }
 
         string GetInstallationUserName()
