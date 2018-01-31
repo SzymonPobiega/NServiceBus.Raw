@@ -3,7 +3,6 @@ namespace NServiceBus.Raw.DelayedRetries
     using System;
     using System.Threading.Tasks;
     using Extensibility;
-    using Faults;
     using Routing;
     using Transport;
 

@@ -1,6 +1,5 @@
 namespace NServiceBus.Raw
 {
-    using System;
     using System.Threading.Tasks;
     using Logging;
     using Settings;

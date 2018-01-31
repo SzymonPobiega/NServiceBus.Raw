@@ -23,7 +23,7 @@ public class When_sending_to_another_endpoint_ASQ : When_sending_to_another_endp
 
         bool isMessageType(Type t) => t == typeof(MessageWrapper);
 
-        var ctor = typeof(MessageMetadataRegistry).GetConstructor(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new Type[] {typeof(Func<Type, bool>)}, null);
+        var ctor = typeof(MessageMetadataRegistry).GetConstructor(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new[] {typeof(Func<Type, bool>)}, null);
         settings.Set<MessageMetadataRegistry>(ctor.Invoke(new object[]{(Func<Type, bool>)isMessageType}));
     }
 }
