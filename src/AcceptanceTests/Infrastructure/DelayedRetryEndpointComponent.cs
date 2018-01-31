@@ -33,8 +33,6 @@ class DelayedRetryEndpointComponent<TTransport, TContext> : IComponentBehavior
 
     public Task<ComponentRunner> CreateRunner(RunDescriptor run)
     {
-        var typedScenarioContext = (TContext)run.ScenarioContext;
-
         var endpoint = new DelayedRetryEndpoint<TTransport>(name, null, customizeTransport);
         
         return Task.FromResult<ComponentRunner>(new Runner(name, endpoint));
