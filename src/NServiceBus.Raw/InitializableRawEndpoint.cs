@@ -35,6 +35,8 @@ namespace NServiceBus.Raw
             var dispatcher = sendInfrastructure.DispatcherFactory();
 
             IPushMessages messagePump = null;
+            IManageSubscriptions subscriptionManager = null;
+
             if (!settings.GetOrDefault<bool>("Endpoint.SendOnly"))
             {
                 var receiveInfrastructure = transportInfrastructure.ConfigureReceiveInfrastructure();
@@ -50,13 +52,12 @@ namespace NServiceBus.Raw
                 }
 
                 RegisterReceivingComponent(settings, localAddress);
-            }
 
-            IManageSubscriptions subscriptionManager = null;
-            if (transportInfrastructure.OutboundRoutingPolicy.Publishes == OutboundRoutingType.Multicast ||
-                transportInfrastructure.OutboundRoutingPolicy.Sends == OutboundRoutingType.Multicast)
-            {
-                subscriptionManager = CreateSubscriptionManager(transportInfrastructure);
+                if (transportInfrastructure.OutboundRoutingPolicy.Publishes == OutboundRoutingType.Multicast ||
+                    transportInfrastructure.OutboundRoutingPolicy.Sends == OutboundRoutingType.Multicast)
+                {
+                    subscriptionManager = CreateSubscriptionManager(transportInfrastructure);
+                }
             }
 
             var startableEndpoint = new StartableRawEndpoint(settings, transportInfrastructure, CreateCriticalErrorHandler(), messagePump, dispatcher, subscriptionManager, onMessage, localAddress);

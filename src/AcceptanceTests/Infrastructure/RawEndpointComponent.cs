@@ -32,6 +32,26 @@ static class RawEndpointComponentExtensions
         return scenario.WithComponent(component);
     }
 
+    public static IScenarioWithEndpointBehavior<TContext> WithRawSendOnlyEndpoint<TTransport, TContext>(this IScenarioWithEndpointBehavior<TContext> scenario,
+        Action<TransportExtensions<TTransport>> customizeTransport,
+        string name, 
+        Func<IReceivingRawEndpoint, TContext, Task> onStarting = null,
+        Func<IReceivingRawEndpoint, TContext, Task> onStarted = null,
+        Action<RawEndpointConfiguration> configure = null)
+        where TContext : ScenarioContext
+        where TTransport : TransportDefinition, new()
+    {
+        void configureWithTransport(RawEndpointConfiguration cfg)
+        {
+            configure?.Invoke(cfg);
+            var ext = cfg.UseTransport<TTransport>();
+            customizeTransport(ext);
+        }
+
+        var component = new RawEndpointComponent<TContext>(name, null, onStarting, onStarted, configureWithTransport);
+        return scenario.WithComponent(component);
+    }
+
     public static Task Send(this IRawEndpoint endpoint, string destination, Dictionary<string, string> headers, byte[] body)
     {
         var op = new TransportOperation(new OutgoingMessage(Guid.NewGuid().ToString(), headers, body), new UnicastAddressTag(destination));
@@ -67,7 +87,10 @@ class RawEndpointComponent<TContext> : IComponentBehavior
     {
         var typedScenarioContext = (TContext)run.ScenarioContext;
 
-        var config = RawEndpointConfiguration.Create(name, (c, d) => onMessage(c, typedScenarioContext, d), "poison");
+        var config = onMessage != null
+            ? RawEndpointConfiguration.Create(name, (c, d) => onMessage(c, typedScenarioContext, d), "poison")
+            : RawEndpointConfiguration.CreateSendOnly(name);
+
         config.AutoCreateQueue();
         configure(config);
         return Task.FromResult<ComponentRunner>(new Runner(config, name,

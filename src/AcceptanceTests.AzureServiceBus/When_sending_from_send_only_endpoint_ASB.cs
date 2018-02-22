@@ -2,7 +2,7 @@
 using NUnit.Framework;
 
 [TestFixture]
-public class When_publishing_to_another_endpoint_ASB : When_publishing_to_another_endpoint<AzureServiceBusTransport>
+public class When_sending_from_send_only_endpoint_ASB : When_sending_from_send_only_endpoint<AzureServiceBusTransport>
 {
     protected override void SetupTransport(TransportExtensions<AzureServiceBusTransport> extensions)
     {
@@ -10,4 +10,3 @@ public class When_publishing_to_another_endpoint_ASB : When_publishing_to_anothe
         extensions.UseForwardingTopology();
     }
 }
-

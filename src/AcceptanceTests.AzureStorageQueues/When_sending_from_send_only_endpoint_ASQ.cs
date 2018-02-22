@@ -2,7 +2,7 @@
 using NUnit.Framework;
 
 [TestFixture]
-public class When_sending_to_another_endpoint_ASQ : When_sending_to_another_endpoint<AzureStorageQueueTransport>
+public class When_sending_from_send_only_endpoint_ASQ : When_sending_from_send_only_endpoint<AzureStorageQueueTransport>
 {
     protected override void SetupTransport(TransportExtensions<AzureStorageQueueTransport> extensions)
     {
