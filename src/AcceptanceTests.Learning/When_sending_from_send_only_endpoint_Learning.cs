@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using NServiceBus;
+﻿using NServiceBus;
 using NUnit.Framework;
 
 [TestFixture]
