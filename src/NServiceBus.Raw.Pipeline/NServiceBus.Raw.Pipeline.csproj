@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net452;netstandard2.0</TargetFrameworks>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\NServiceBus.Raw.snk</AssemblyOriginatorKeyFile>
+    <!--<GenerateDocumentationFile>true</GenerateDocumentationFile>-->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GitVersionTask" Version="4.0.0-*" PrivateAssets="All" />
+    <PackageReference Include="NServiceBus" Version="7.0.0-rc0001" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <Description>Use NServiceBus infrastructure to send raw messages</Description>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+</Project>
