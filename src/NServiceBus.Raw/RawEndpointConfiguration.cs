@@ -2,7 +2,6 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Transactions;
-using NServiceBus.Config.ConfigurationSource;
 using NServiceBus.Settings;
 using NServiceBus.Transport;
 
@@ -15,7 +14,6 @@ namespace NServiceBus.Raw
     {
         Func<MessageContext, IDispatchMessages, Task> onMessage;
 
-        
         /// <summary>
         /// Creates a send-only raw endpoint config.
         /// </summary>
@@ -48,8 +46,7 @@ namespace NServiceBus.Raw
             Settings.Set("TypesToScan", new Type[0]);
             Settings.Set("NServiceBus.Routing.EndpointName", endpointName);
             Settings.Set<Conventions>(new Conventions()); //Hack for ASB
-
-            Settings.SetDefault<IConfigurationSource>(new DefaultConfigurationSource());
+            Settings.Set<StartupDiagnosticEntries>(new StartupDiagnosticEntries());
 
             Settings.Set<QueueBindings>(new QueueBindings());
 

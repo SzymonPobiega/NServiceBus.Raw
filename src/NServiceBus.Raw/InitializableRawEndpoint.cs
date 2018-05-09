@@ -7,7 +7,6 @@ using NServiceBus.Transport;
 
 namespace NServiceBus.Raw
 {
-    using System.Security.Principal;
 
     class InitializableRawEndpoint
     {
@@ -26,47 +25,86 @@ namespace NServiceBus.Raw
             var transportInfrastructure = transportDefinition.Initialize(settings, connectionString);
             settings.Set<TransportInfrastructure>(transportInfrastructure);
 
+            var mainInstance = transportInfrastructure.BindToLocalEndpoint(new EndpointInstance(settings.EndpointName()));
+            var baseQueueName = settings.GetOrDefault<string>("BaseInputQueueName") ?? settings.EndpointName();
+            var mainLogicalAddress = LogicalAddress.CreateLocalAddress(baseQueueName, mainInstance.Properties);
+            var localAddress = transportInfrastructure.ToTransportAddress(mainLogicalAddress);
+            settings.SetDefault<LogicalAddress>(mainLogicalAddress);
+
             var sendInfrastructure = transportInfrastructure.ConfigureSendInfrastructure();
             var dispatcher = sendInfrastructure.DispatcherFactory();
 
             IPushMessages messagePump = null;
+            IManageSubscriptions subscriptionManager = null;
+
             if (!settings.GetOrDefault<bool>("Endpoint.SendOnly"))
             {
                 var receiveInfrastructure = transportInfrastructure.ConfigureReceiveInfrastructure();
-
                 var queueCreator = receiveInfrastructure.QueueCreatorFactory();
-
-                var baseQueueName = settings.GetOrDefault<string>("BaseInputQueueName") ?? settings.EndpointName();
-
-                var mainInstance = transportInfrastructure.BindToLocalEndpoint(new EndpointInstance(settings.EndpointName()));
-
-                var mainLogicalAddress = LogicalAddress.CreateLocalAddress(baseQueueName, mainInstance.Properties);
-                settings.SetDefault<LogicalAddress>(mainLogicalAddress);
-
-                var mainAddress = transportInfrastructure.ToTransportAddress(mainLogicalAddress);
-                settings.SetDefault("NServiceBus.SharedQueue", mainAddress);
-
                 messagePump = receiveInfrastructure.MessagePumpFactory();
 
                 if (settings.GetOrDefault<bool>("NServiceBus.Raw.CreateQueue"))
                 {
                     var bindings = new QueueBindings();
-                    bindings.BindReceiving(mainAddress);
+                    bindings.BindReceiving(localAddress);
                     bindings.BindReceiving(settings.Get<string>("NServiceBus.Raw.PoisonMessageQueue"));
                     await queueCreator.CreateQueueIfNecessary(bindings, GetInstallationUserName()).ConfigureAwait(false);
                 }
+
+                RegisterReceivingComponent(settings, localAddress);
+
+                if (transportInfrastructure.OutboundRoutingPolicy.Publishes == OutboundRoutingType.Multicast ||
+                    transportInfrastructure.OutboundRoutingPolicy.Sends == OutboundRoutingType.Multicast)
+                {
+                    subscriptionManager = CreateSubscriptionManager(transportInfrastructure);
+                }
             }
 
-            var startableEndpoint = new StartableRawEndpoint(settings, transportInfrastructure, CreateCriticalErrorHandler(), messagePump, dispatcher, onMessage);
+            var startableEndpoint = new StartableRawEndpoint(settings, transportInfrastructure, CreateCriticalErrorHandler(), messagePump, dispatcher, subscriptionManager, onMessage, localAddress);
             return startableEndpoint;
+        }
+
+        static IManageSubscriptions CreateSubscriptionManager(TransportInfrastructure transportInfra)
+        {
+            var subscriptionInfra = transportInfra.ConfigureSubscriptionInfrastructure();
+            var factoryProperty = typeof(TransportSubscriptionInfrastructure).GetProperty("SubscriptionManagerFactory", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var factoryInstance = (Func<IManageSubscriptions>)factoryProperty.GetValue(subscriptionInfra, new object[0]);
+            return factoryInstance();
+        }
+
+        static void RegisterReceivingComponent(SettingsHolder settings, string localAddress)
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.CreateInstance;
+            var parameters = new[]
+            {
+                typeof(LogicalAddress),
+                typeof(string),
+                typeof(string),
+                typeof(string),
+                typeof(TransportTransactionMode),
+                typeof(PushRuntimeSettings),
+                typeof(bool)
+            };
+            var ctor = typeof(Endpoint).Assembly.GetType("NServiceBus.ReceiveConfiguration", true).GetConstructor(flags, null, parameters, null);
+
+            var receiveConfig = ctor.Invoke(new object[] { null, localAddress, localAddress, null, null, null, false });
+            settings.Set("NServiceBus.ReceiveConfiguration", receiveConfig);
         }
 
         string GetInstallationUserName()
         {
-            string username;
-            return settings.TryGet("NServiceBus.Raw.Identity", out username)
+            return settings.TryGet("NServiceBus.Raw.Identity", out string username)
                 ? username
-                : WindowsIdentity.GetCurrent().Name;
+                : DefaultName();
+        }
+
+        static string DefaultName()
+        {
+#if NET452
+            return System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+#else
+            return null;
+#endif
         }
 
         string GetConnectionString(TransportDefinition transportDefinition)
@@ -77,8 +115,7 @@ namespace NServiceBus.Raw
 
         RawCriticalError CreateCriticalErrorHandler()
         {
-            Func<ICriticalErrorContext, Task> errorAction;
-            settings.TryGet("onCriticalErrorAction", out errorAction);
+            settings.TryGet("onCriticalErrorAction", out Func<ICriticalErrorContext, Task> errorAction);
             return new RawCriticalError(errorAction);
         }
 

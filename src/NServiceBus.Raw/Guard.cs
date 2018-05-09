@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Linq;
 using System.Reflection;
 using NServiceBus.Raw.Properties;
@@ -37,19 +36,6 @@ namespace NServiceBus.Raw
             }
         }
 
-        [ContractAnnotation("value: null => halt")]
-        public static void AgainstNullAndEmpty([InvokerParameterName] string argumentName, [NotNull, NoEnumeration] ICollection value)
-        {
-            if (value == null)
-            {
-                throw new ArgumentNullException(argumentName);
-            }
-            if (value.Count == 0)
-            {
-                throw new ArgumentOutOfRangeException(argumentName);
-            }
-        }
-
         public static void AgainstNegativeAndZero([InvokerParameterName] string argumentName, int value)
         {
             if (value <= 0)
@@ -66,20 +52,5 @@ namespace NServiceBus.Raw
             }
         }
 
-        public static void AgainstNegativeAndZero([InvokerParameterName] string argumentName, TimeSpan value)
-        {
-            if (value <= TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(argumentName);
-            }
-        }
-
-        public static void AgainstNegative([InvokerParameterName] string argumentName, TimeSpan value)
-        {
-            if (value < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(argumentName);
-            }
-        }
     }
 }

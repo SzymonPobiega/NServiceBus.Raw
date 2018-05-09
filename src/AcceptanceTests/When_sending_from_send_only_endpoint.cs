@@ -7,7 +7,7 @@ using NServiceBus.AcceptanceTests;
 using NServiceBus.Transport;
 using NUnit.Framework;
 
-public abstract class When_sending_to_another_endpoint<TTransport> : NServiceBusAcceptanceTest<TTransport>
+public abstract class When_sending_from_send_only_endpoint<TTransport> : NServiceBusAcceptanceTest<TTransport>
     where TTransport : TransportDefinition, new()
 {
     [Test]
@@ -21,8 +21,7 @@ public abstract class When_sending_to_another_endpoint<TTransport> : NServiceBus
         var body = Encoding.UTF8.GetBytes("Hello world!");
 
         var result = await Scenario.Define<Context>()
-            .WithRawEndpoint<TTransport, Context>(SetupTransport, "Sender",
-                onMessage: (context, scenario, dispatcher) => Task.FromResult(0),
+            .WithRawSendOnlyEndpoint<TTransport, Context>(SetupTransport, "Sender",
                 onStarted: (endpoint, scenario) => endpoint.Send("Receiver", headers, body))
             .WithRawEndpoint<TTransport, Context>(SetupTransport, "Receiver",
                 onMessage: (context, scenario, dispatcher) =>

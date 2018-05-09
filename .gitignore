@@ -30,3 +30,4 @@ _ReSharper*/
 src/packages/
 binaries/
 nugets/
+src/.vs/

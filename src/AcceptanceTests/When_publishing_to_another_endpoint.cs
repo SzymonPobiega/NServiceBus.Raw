@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using NServiceBus;
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTests;
+using NServiceBus.Extensibility;
 using NServiceBus.Transport;
 using NUnit.Framework;
 
-public abstract class When_sending_to_another_endpoint<TTransport> : NServiceBusAcceptanceTest<TTransport>
+public abstract class When_publishing_to_another_endpoint<TTransport> : NServiceBusAcceptanceTest<TTransport>
     where TTransport : TransportDefinition, new()
 {
     [Test]
@@ -16,16 +18,17 @@ public abstract class When_sending_to_another_endpoint<TTransport> : NServiceBus
         var secret = Guid.NewGuid();
         var headers = new Dictionary<string, string>
         {
-            ["Secret"] = secret.ToString()
+            ["Secret"] = secret.ToString(),
+            ["NServiceBus.EnclosedMessageTypes"] = "MyEvent"
         };
         var body = Encoding.UTF8.GetBytes("Hello world!");
 
         var result = await Scenario.Define<Context>()
-            .WithRawEndpoint<TTransport, Context>(SetupTransport, "Sender",
+            .WithRawEndpoint<TTransport, Context>(SetupTransport, "Publisher",
                 onMessage: (context, scenario, dispatcher) => Task.FromResult(0),
-                onStarted: (endpoint, scenario) => endpoint.Send("Receiver", headers, body))
-            .WithRawEndpoint<TTransport, Context>(SetupTransport, "Receiver",
-                onMessage: (context, scenario, dispatcher) =>
+                onStarted: (endpoint, scenario) => endpoint.Publish(typeof(MyEvent), headers, body))
+            .WithRawEndpoint<TTransport, Context>(SetupTransport, "Subscriber",
+                onMessage:(context, scenario, dispatcher) =>
                 {
                     if (context.Headers.TryGetValue("Secret", out var receivedSecret) && receivedSecret == secret.ToString())
                     {
@@ -33,6 +36,10 @@ public abstract class When_sending_to_another_endpoint<TTransport> : NServiceBus
                         scenario.Message = Encoding.UTF8.GetString(context.Body);
                     }
                     return Task.FromResult(0);
+                },
+                onStarting: (endpoint, context) =>
+                {
+                    return endpoint.SubscriptionManager.Subscribe(typeof(MyEvent), new ContextBag());
                 })
             .Done(c => c.MessageReceived)
             .Run();
@@ -46,4 +53,8 @@ public abstract class When_sending_to_another_endpoint<TTransport> : NServiceBus
         public bool MessageReceived { get; set; }
         public string Message { get; set; }
     }
+}
+
+public class MyEvent : IEvent
+{
 }

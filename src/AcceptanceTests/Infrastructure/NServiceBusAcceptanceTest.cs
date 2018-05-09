@@ -4,14 +4,13 @@ namespace NServiceBus.AcceptanceTests
     using System.Threading;
     using AcceptanceTesting.Customization;
     using NUnit.Framework;
+    using Transport;
 
-    /// <summary>
-    /// Base class for all the NSB test that sets up our conventions
-    /// </summary>
-    [TestFixture]
-    // ReSharper disable once PartialTypeWithSinglePart
-    public abstract partial class NServiceBusAcceptanceTest
+    public abstract class NServiceBusAcceptanceTest<TTransport>
+        where TTransport : TransportDefinition, new()
     {
+        protected abstract void SetupTransport(TransportExtensions<TTransport> extensions);
+
         [SetUp]
         public void SetUp()
         {

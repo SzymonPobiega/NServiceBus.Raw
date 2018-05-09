@@ -27,5 +27,10 @@ namespace NServiceBus.Raw
         /// Gets the settings used to initialize this endpoint instance.
         /// </summary>
         ReadOnlySettings Settings { get; }
+
+        /// <summary>
+        /// Gets the subscription manager if the underlying transport supports native publish-subscribe.
+        /// </summary>
+        IManageSubscriptions SubscriptionManager { get; }
     }
 }
