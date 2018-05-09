@@ -20,10 +20,19 @@ namespace NServiceBus.Raw
         {
             Log.Info("Initiating shutdown.");
 
-            await transportInfrastructure.Stop().ConfigureAwait(false);
-            settings.Clear();
-
-            Log.Info("Shutdown complete.");
+            try
+            {
+                await transportInfrastructure.Stop().ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+                //Ignore when shutting down
+            }
+            finally
+            {
+                settings.Clear();
+                Log.Info("Shutdown complete.");
+            }
         }
 
         static ILog Log = LogManager.GetLogger<StoppableRawEndpoint>();
