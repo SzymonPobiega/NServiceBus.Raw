@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="GitVersionTask" Version="4.0.0-*" PrivateAssets="All" />
-    <PackageReference Include="NServiceBus" Version="7.0.0-rc0001" />
+    <PackageReference Include="NServiceBus" Version="7.0.0" />
   </ItemGroup>
 
   <PropertyGroup>
