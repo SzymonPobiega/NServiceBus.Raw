@@ -15,8 +15,8 @@ static class RawEndpointComponentExtensions
     public static IScenarioWithEndpointBehavior<TContext> WithRawEndpoint<TTransport, TContext>(this IScenarioWithEndpointBehavior<TContext> scenario,
         Action<TransportExtensions<TTransport>> customizeTransport,
         string name, Func<MessageContext, TContext, IDispatchMessages, Task> onMessage,
-        Func<IReceivingRawEndpoint, TContext, Task> onStarting = null,
-        Func<IReceivingRawEndpoint, TContext, Task> onStarted = null,
+        Func<IRawEndpoint, TContext, Task> onStarting = null,
+        Func<IRawEndpoint, TContext, Task> onStarted = null,
         Action<RawEndpointConfiguration> configure = null)
         where TContext : ScenarioContext
         where TTransport : TransportDefinition, new()
@@ -35,8 +35,8 @@ static class RawEndpointComponentExtensions
     public static IScenarioWithEndpointBehavior<TContext> WithRawSendOnlyEndpoint<TTransport, TContext>(this IScenarioWithEndpointBehavior<TContext> scenario,
         Action<TransportExtensions<TTransport>> customizeTransport,
         string name, 
-        Func<IReceivingRawEndpoint, TContext, Task> onStarting = null,
-        Func<IReceivingRawEndpoint, TContext, Task> onStarted = null,
+        Func<IRawEndpoint, TContext, Task> onStarting = null,
+        Func<IRawEndpoint, TContext, Task> onStarted = null,
         Action<RawEndpointConfiguration> configure = null)
         where TContext : ScenarioContext
         where TTransport : TransportDefinition, new()
@@ -70,11 +70,11 @@ class RawEndpointComponent<TContext> : IComponentBehavior
 {
     string name;
     Func<MessageContext, TContext, IDispatchMessages, Task> onMessage;
-    Func<IReceivingRawEndpoint, TContext, Task> onStarting;
-    Func<IReceivingRawEndpoint, TContext, Task> onStarted;
+    Func<IRawEndpoint, TContext, Task> onStarting;
+    Func<IRawEndpoint, TContext, Task> onStarted;
     Action<RawEndpointConfiguration> configure;
 
-    public RawEndpointComponent(string name, Func<MessageContext, TContext, IDispatchMessages, Task> onMessage, Func<IReceivingRawEndpoint, TContext, Task> onStarting, Func<IReceivingRawEndpoint, TContext, Task> onStarted, Action<RawEndpointConfiguration> configure)
+    public RawEndpointComponent(string name, Func<MessageContext, TContext, IDispatchMessages, Task> onMessage, Func<IRawEndpoint, TContext, Task> onStarting, Func<IRawEndpoint, TContext, Task> onStarted, Action<RawEndpointConfiguration> configure)
     {
         this.name = name;
         this.onMessage = onMessage;
@@ -87,13 +87,14 @@ class RawEndpointComponent<TContext> : IComponentBehavior
     {
         var typedScenarioContext = (TContext)run.ScenarioContext;
 
-        var config = onMessage != null
-            ? RawEndpointConfiguration.Create(name, (c, d) => onMessage(c, typedScenarioContext, d), "poison")
-            : RawEndpointConfiguration.CreateSendOnly(name);
+        var sendOnly = onMessage == null;
+        var config = sendOnly
+            ? RawEndpointConfiguration.CreateSendOnly(name)
+            : RawEndpointConfiguration.Create(name, (c, d) => onMessage(c, typedScenarioContext, d), "poison");
 
         config.AutoCreateQueue();
         configure(config);
-        return Task.FromResult<ComponentRunner>(new Runner(config, name,
+        return Task.FromResult<ComponentRunner>(new Runner(config, name, sendOnly,
             endpoint => onStarting != null ? onStarting(endpoint, typedScenarioContext) : Task.FromResult(0),
             endpoint => onStarted != null ? onStarted(endpoint, typedScenarioContext) : Task.FromResult(0)));
     }
@@ -101,13 +102,15 @@ class RawEndpointComponent<TContext> : IComponentBehavior
     class Runner : ComponentRunner
     {
         RawEndpointConfiguration config;
-        IReceivingRawEndpoint endpoint;
-        Func<IReceivingRawEndpoint, Task> onStarting;
-        Func<IReceivingRawEndpoint, Task> onStarted;
+        bool sendOnly;
+        IRawEndpoint endpoint;
+        Func<IRawEndpoint, Task> onStarting;
+        Func<IRawEndpoint, Task> onStarted;
 
-        public Runner(RawEndpointConfiguration config, string name, Func<IReceivingRawEndpoint, Task> onStarting, Func<IReceivingRawEndpoint, Task> onStarted)
+        public Runner(RawEndpointConfiguration config, string name, bool sendOnly, Func<IRawEndpoint, Task> onStarting, Func<IRawEndpoint, Task> onStarted)
         {
             this.config = config;
+            this.sendOnly = sendOnly;
             this.onStarting = onStarting;
             Name = name;
             this.onStarted = onStarted;
@@ -120,15 +123,24 @@ class RawEndpointComponent<TContext> : IComponentBehavior
 
         public override async Task Start(CancellationToken token)
         {
-            endpoint = await RawEndpoint.Start(config).ConfigureAwait(false);
+            var startable = await RawEndpoint.Create(config).ConfigureAwait(false);
+            if (!sendOnly)
+            {
+                endpoint = await startable.Start().ConfigureAwait(false);
+            }
+            else
+            {
+                endpoint = startable;
+            }
+            
             await onStarting(endpoint).ConfigureAwait(false);
         }
 
         public override async Task Stop()
         {
-            if (endpoint != null)
+            if (endpoint is IStoppableRawEndpoint stoppable)
             {
-                await endpoint.Stop().ConfigureAwait(false);
+                await stoppable.Stop().ConfigureAwait(false);
             }
         }
 
