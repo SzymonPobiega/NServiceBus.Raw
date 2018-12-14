@@ -24,8 +24,6 @@ namespace NServiceBus.Raw
 
         public async Task<IReceivingRawEndpoint> Start()
         {
-            await transportInfrastructure.Start().ConfigureAwait(false);
-
             var receiver = CreateReceiver();
 
             if (receiver != null)

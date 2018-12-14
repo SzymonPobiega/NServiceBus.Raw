@@ -60,6 +60,8 @@ namespace NServiceBus.Raw
                 }
             }
 
+            await transportInfrastructure.Start().ConfigureAwait(false);
+
             var startableEndpoint = new StartableRawEndpoint(settings, transportInfrastructure, CreateCriticalErrorHandler(), messagePump, dispatcher, subscriptionManager, onMessage, localAddress);
             return startableEndpoint;
         }
