@@ -9,9 +9,8 @@ Sending and receiving raw messages using NServiceBus transport infrastructure. N
 Configuration of raw endpoints is very straightforwards and follows the same patterns as regular NServiceBus endpoint configuration
 
 ```
-var senderConfig = RawEndpointConfiguration.Create("Sender", OnMessage);
+var senderConfig = RawEndpointConfiguration.Create("Sender", OnMessage, "error");
 senderConfig.UseTransport<MsmqTransport>();
-senderConfig.SendFailedMessagesTo("error");
 
 var sender = await RawEndpoint.Start(senderConfig).ConfigureAwait(false);
 ```
