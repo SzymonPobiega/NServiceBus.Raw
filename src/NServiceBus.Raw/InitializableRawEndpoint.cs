@@ -39,6 +39,8 @@ namespace NServiceBus.Raw
 
             if (!settings.GetOrDefault<bool>("Endpoint.SendOnly"))
             {
+                RegisterReceivingComponent(settings, mainLogicalAddress, localAddress);
+
                 var receiveInfrastructure = transportInfrastructure.ConfigureReceiveInfrastructure();
                 var queueCreator = receiveInfrastructure.QueueCreatorFactory();
                 messagePump = receiveInfrastructure.MessagePumpFactory();
@@ -50,8 +52,6 @@ namespace NServiceBus.Raw
                     bindings.BindReceiving(settings.Get<string>("NServiceBus.Raw.PoisonMessageQueue"));
                     await queueCreator.CreateQueueIfNecessary(bindings, GetInstallationUserName()).ConfigureAwait(false);
                 }
-
-                RegisterReceivingComponent(settings, localAddress);
 
                 if (transportInfrastructure.OutboundRoutingPolicy.Publishes == OutboundRoutingType.Multicast ||
                     transportInfrastructure.OutboundRoutingPolicy.Sends == OutboundRoutingType.Multicast)
@@ -74,7 +74,7 @@ namespace NServiceBus.Raw
             return factoryInstance();
         }
 
-        static void RegisterReceivingComponent(SettingsHolder settings, string localAddress)
+        static void RegisterReceivingComponent(SettingsHolder settings, LogicalAddress logicalAddress, string localAddress)
         {
             const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.CreateInstance;
             var parameters = new[]
@@ -89,7 +89,7 @@ namespace NServiceBus.Raw
             };
             var ctor = typeof(Endpoint).Assembly.GetType("NServiceBus.ReceiveConfiguration", true).GetConstructor(flags, null, parameters, null);
 
-            var receiveConfig = ctor.Invoke(new object[] { null, localAddress, localAddress, null, null, null, false });
+            var receiveConfig = ctor.Invoke(new object[] { logicalAddress, localAddress, localAddress, null, null, null, false });
             settings.Set("NServiceBus.ReceiveConfiguration", receiveConfig);
         }
 
