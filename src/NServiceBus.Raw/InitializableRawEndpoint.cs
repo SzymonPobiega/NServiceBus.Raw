@@ -44,13 +44,12 @@ namespace NServiceBus.Raw
                 var receiveInfrastructure = transportInfrastructure.ConfigureReceiveInfrastructure();
                 var queueCreator = receiveInfrastructure.QueueCreatorFactory();
                 messagePump = receiveInfrastructure.MessagePumpFactory();
+                var queueBindings = settings.Get<QueueBindings>();
+                queueBindings.BindReceiving(localAddress);
 
                 if (settings.GetOrDefault<bool>("NServiceBus.Raw.CreateQueue"))
                 {
-                    var bindings = new QueueBindings();
-                    bindings.BindReceiving(localAddress);
-                    bindings.BindReceiving(settings.Get<string>("NServiceBus.Raw.PoisonMessageQueue"));
-                    await queueCreator.CreateQueueIfNecessary(bindings, GetInstallationUserName()).ConfigureAwait(false);
+                    await queueCreator.CreateQueueIfNecessary(queueBindings, GetInstallationUserName()).ConfigureAwait(false);
                 }
 
                 if (transportInfrastructure.OutboundRoutingPolicy.Publishes == OutboundRoutingType.Multicast ||

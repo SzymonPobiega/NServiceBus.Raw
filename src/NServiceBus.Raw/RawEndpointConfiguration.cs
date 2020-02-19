@@ -13,6 +13,7 @@ namespace NServiceBus.Raw
     public class RawEndpointConfiguration
     {
         Func<MessageContext, IDispatchMessages, Task> onMessage;
+        QueueBindings queueBindings;
 
         /// <summary>
         /// Creates a send-only raw endpoint config.
@@ -48,14 +49,15 @@ namespace NServiceBus.Raw
             Settings.Set<Conventions>(new Conventions()); //Hack for ASB
             Settings.Set<StartupDiagnosticEntries>(new StartupDiagnosticEntries());
 
-            Settings.Set<QueueBindings>(new QueueBindings());
+            queueBindings = new QueueBindings();
+            Settings.Set<QueueBindings>(queueBindings);
 
-            Settings.SetDefault("Endpoint.SendOnly", false);
             Settings.SetDefault("Transactions.IsolationLevel", IsolationLevel.ReadCommitted);
             Settings.SetDefault("Transactions.DefaultTimeout", TransactionManager.DefaultTimeout);
 
             if (!sendOnly)
             {
+                queueBindings.BindSending(poisonMessageQueue);
                 Settings.Set("NServiceBus.Raw.PoisonMessageQueue", poisonMessageQueue);
                 Settings.Set("errorQueue", poisonMessageQueue); //Hack for MSMQ
                 Settings.SetDefault<IErrorHandlingPolicy>(new DefaultErrorHandlingPolicy(poisonMessageQueue, 5));
@@ -87,7 +89,7 @@ namespace NServiceBus.Raw
         }
 
         /// <summary>
-        /// Instructs the endpoint to automatically create input queue if it does not exist.
+        /// Instructs the endpoint to automatically create input queue and poison queue if they do not exist.
         /// </summary>
         public void AutoCreateQueue(string identity = null)
         {
@@ -96,6 +98,18 @@ namespace NServiceBus.Raw
             {
                 Settings.Set("NServiceBus.Raw.Identity", identity);
             }
+        }
+
+        /// <summary>
+        /// Instructs the endpoint to automatically create input queue, poison queue and provided additional queues if they do not exist.
+        /// </summary>
+        public void AutoCreateQueues(string[] additionalQueues, string identity = null)
+        {
+            foreach (var additionalQueue in additionalQueues)
+            {
+                queueBindings.BindSending(additionalQueue);
+            }
+            AutoCreateQueue(identity);
         }
 
         /// <summary>
