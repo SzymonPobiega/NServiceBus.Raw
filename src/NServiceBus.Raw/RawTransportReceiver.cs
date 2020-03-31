@@ -45,7 +45,11 @@ namespace NServiceBus.Raw
             }
 
             await receiver.Stop().ConfigureAwait(false);
-
+            if (receiver is IDisposable disposable)
+            {
+                disposable.Dispose();
+                receiver = null;
+            }
             isStarted = false;
         }
 
