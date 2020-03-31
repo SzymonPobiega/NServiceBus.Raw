@@ -48,7 +48,6 @@ namespace NServiceBus.Raw
             if (receiver is IDisposable disposable)
             {
                 disposable.Dispose();
-                receiver = null;
             }
             isStarted = false;
         }
