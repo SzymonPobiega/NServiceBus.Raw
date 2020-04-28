@@ -110,7 +110,8 @@ namespace NServiceBus.Raw
 
         string GetConnectionString(TransportDefinition transportDefinition)
         {
-            var instance = settings.Get(connectionStringType.FullName);
+            var instance = connectionStringType.GetProperty("Default")
+                .GetValue(null);// Activator.CreateInstance(connectionStringType);
             return (string) connectionStringGetter.Invoke(instance, new object[] {transportDefinition});
         }
 
