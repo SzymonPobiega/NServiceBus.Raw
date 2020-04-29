@@ -75,21 +75,39 @@ namespace NServiceBus.Raw
 
         static void RegisterReceivingComponent(SettingsHolder settings, LogicalAddress logicalAddress, string localAddress)
         {
-            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.CreateInstance;
-            var parameters = new[]
-            {
-                typeof(LogicalAddress),
-                typeof(string),
-                typeof(string),
-                typeof(string),
-                typeof(TransportTransactionMode),
-                typeof(PushRuntimeSettings),
-                typeof(bool)
-            };
-            var ctor = typeof(Endpoint).Assembly.GetType("NServiceBus.ReceiveConfiguration", true).GetConstructor(flags, null, parameters, null);
+            //const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.CreateInstance;
+            //var parameters = new[]
+            //{
+            //    //typeof(LogicalAddress),
+            //    typeof(string),
+            //    typeof(string),
+            //    typeof(string),
+            //    typeof(TransportTransactionMode),
+            //    typeof(PushRuntimeSettings),
+            //    typeof(bool),
+            //    typeof(Notification<ReceivePipelineCompleted>)
+            //};
 
-            var receiveConfig = ctor.Invoke(new object[] { logicalAddress, localAddress, localAddress, null, null, null, false });
-            settings.Set("NServiceBus.ReceiveConfiguration", receiveConfig);
+            var type = typeof(Endpoint).Assembly.GetType("NServiceBus.ReceiveComponent+Configuration", true);
+            var ctor = type.GetConstructors()[0];// .GetConstructor(flags, null, parameters, null);
+
+            var receiveConfig = ctor.Invoke(new object[] {
+                logicalAddress, //logicalAddress
+                localAddress, //queueNameBase
+                localAddress, //localAddress
+                null, //instanceSpecificQueue
+                null, //transactionMode
+                null, //pushRuntimeSettings
+                false, //purgeOnStartup
+                null, //pipelineCompletedSubscribers
+                false, //isSendOnlyEndpoint
+                null, //executeTheseHandlersFirst
+                null, //messageHandlerRegistry
+                false, //createQueues
+                null, //transportSeam
+            });
+
+            settings.Set("NServiceBus.ReceiveComponent+Configuration", receiveConfig);
         }
 
         string GetInstallationUserName()
@@ -111,7 +129,8 @@ namespace NServiceBus.Raw
         string GetConnectionString(TransportDefinition transportDefinition)
         {
             var instance = connectionStringType.GetProperty("Default")
-                .GetValue(null);// Activator.CreateInstance(connectionStringType);
+                .GetValue(null);
+
             return (string) connectionStringGetter.Invoke(instance, new object[] {transportDefinition});
         }
 
