@@ -22,6 +22,8 @@ public static class Helper
         bool isMessageType(Type t) => t == typeof(MessageWrapper);
 
         var ctor = typeof(MessageMetadataRegistry).GetConstructor(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(Func<Type, bool>) }, null);
+#pragma warning disable CS0618 // Type or member is obsolete
         settings.Set<MessageMetadataRegistry>(ctor.Invoke(new object[] { (Func<Type, bool>)isMessageType }));
+#pragma warning restore CS0618 // Type or member is obsolete
     }
 }

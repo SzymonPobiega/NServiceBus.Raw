@@ -20,6 +20,8 @@ namespace NServiceBus.Raw
         {
             CreateCriticalErrorHandler();
 
+            CreateStartupDiagnostics(settings);
+
             var transportDefinition = settings.Get<TransportDefinition>();
             var connectionString = GetConnectionString(transportDefinition);
             var transportInfrastructure = transportDefinition.Initialize(settings, connectionString);
@@ -65,6 +67,13 @@ namespace NServiceBus.Raw
             return startableEndpoint;
         }
 
+        private void CreateStartupDiagnostics(SettingsHolder settings)
+        {
+            var ctor = hostingSettingsType.GetConstructors()[0];
+            var hostingSettings = ctor.Invoke(new object[] { settings });
+            settings.Set(hostingSettingsType.FullName, hostingSettings);
+        }
+
         static IManageSubscriptions CreateSubscriptionManager(TransportInfrastructure transportInfra)
         {
             var subscriptionInfra = transportInfra.ConfigureSubscriptionInfrastructure();
@@ -75,21 +84,26 @@ namespace NServiceBus.Raw
 
         static void RegisterReceivingComponent(SettingsHolder settings, LogicalAddress logicalAddress, string localAddress)
         {
-            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.CreateInstance;
-            var parameters = new[]
-            {
-                typeof(LogicalAddress),
-                typeof(string),
-                typeof(string),
-                typeof(string),
-                typeof(TransportTransactionMode),
-                typeof(PushRuntimeSettings),
-                typeof(bool)
-            };
-            var ctor = typeof(Endpoint).Assembly.GetType("NServiceBus.ReceiveConfiguration", true).GetConstructor(flags, null, parameters, null);
+            var type = typeof(Endpoint).Assembly.GetType("NServiceBus.ReceiveComponent+Configuration", true);
+            var ctor = type.GetConstructors()[0];
 
-            var receiveConfig = ctor.Invoke(new object[] { logicalAddress, localAddress, localAddress, null, null, null, false });
-            settings.Set("NServiceBus.ReceiveConfiguration", receiveConfig);
+            var receiveConfig = ctor.Invoke(new object[] {
+                logicalAddress, //logicalAddress
+                localAddress, //queueNameBase
+                localAddress, //localAddress
+                null, //instanceSpecificQueue
+                null, //transactionMode
+                null, //pushRuntimeSettings
+                false, //purgeOnStartup
+                null, //pipelineCompletedSubscribers
+                false, //isSendOnlyEndpoint
+                null, //executeTheseHandlersFirst
+                null, //messageHandlerRegistry
+                false, //createQueues
+                null, //transportSeam
+            });
+
+            settings.Set("NServiceBus.ReceiveComponent+Configuration", receiveConfig);
         }
 
         string GetInstallationUserName()
@@ -110,7 +124,9 @@ namespace NServiceBus.Raw
 
         string GetConnectionString(TransportDefinition transportDefinition)
         {
-            var instance = settings.Get(connectionStringType.FullName);
+            var instance = connectionStringType.GetProperty("Default")
+                .GetValue(null);
+
             return (string) connectionStringGetter.Invoke(instance, new object[] {transportDefinition});
         }
 
@@ -124,6 +140,8 @@ namespace NServiceBus.Raw
         Func<MessageContext, IDispatchMessages, Task> onMessage;
 
         static Type connectionStringType = typeof(IEndpointInstance).Assembly.GetType("NServiceBus.TransportConnectionString", true);
+
+        static Type hostingSettingsType = typeof(IEndpointInstance).Assembly.GetType("NServiceBus.HostingComponent+Settings", true);
         static MethodInfo connectionStringGetter = connectionStringType.GetMethod("GetConnectionStringOrRaiseError", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
     }
 }

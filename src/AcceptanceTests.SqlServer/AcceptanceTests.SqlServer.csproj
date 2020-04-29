@@ -7,10 +7,10 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.11.2" />
 
-    <PackageReference Include="NServiceBus" Version="7.2.0" />
-    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="7.2.0" />
+    <PackageReference Include="NServiceBus" Version="7.3.0-beta0059" />
+    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="7.3.0-beta0059" />
     <PackageReference Include="NServiceBus.SqlServer" Version="5.0.0" />
-    
+
     <ProjectReference Include="..\NServiceBus.Raw\NServiceBus.Raw.csproj" />
     <ProjectReference Include="..\AcceptanceTests\AcceptanceTests.csproj" />
   </ItemGroup>
