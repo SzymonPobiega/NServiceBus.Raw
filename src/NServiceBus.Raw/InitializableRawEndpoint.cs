@@ -20,18 +20,18 @@ namespace NServiceBus.Raw
         {
             CreateCriticalErrorHandler();
 
-            CreateStartupDiagnostics(settings);
+            CreateStartupDiagnostics();
 
             var transportDefinition = settings.Get<TransportDefinition>();
-            var connectionString = GetConnectionString(transportDefinition);
+            var connectionString = settings.GetConnectionString();
             var transportInfrastructure = transportDefinition.Initialize(settings, connectionString);
-            settings.Set<TransportInfrastructure>(transportInfrastructure);
+            settings.Set(transportInfrastructure);
 
             var mainInstance = transportInfrastructure.BindToLocalEndpoint(new EndpointInstance(settings.EndpointName()));
             var baseQueueName = settings.GetOrDefault<string>("BaseInputQueueName") ?? settings.EndpointName();
             var mainLogicalAddress = LogicalAddress.CreateLocalAddress(baseQueueName, mainInstance.Properties);
             var localAddress = transportInfrastructure.ToTransportAddress(mainLogicalAddress);
-            settings.SetDefault<LogicalAddress>(mainLogicalAddress);
+            settings.SetDefault(mainLogicalAddress);
 
             var sendInfrastructure = transportInfrastructure.ConfigureSendInfrastructure();
             var dispatcher = sendInfrastructure.DispatcherFactory();
@@ -67,7 +67,7 @@ namespace NServiceBus.Raw
             return startableEndpoint;
         }
 
-        private void CreateStartupDiagnostics(SettingsHolder settings)
+        void CreateStartupDiagnostics()
         {
             var ctor = hostingSettingsType.GetConstructors()[0];
             var hostingSettings = ctor.Invoke(new object[] { settings });
@@ -122,14 +122,6 @@ namespace NServiceBus.Raw
 #endif
         }
 
-        string GetConnectionString(TransportDefinition transportDefinition)
-        {
-            var instance = connectionStringType.GetProperty("Default")
-                .GetValue(null);
-
-            return (string) connectionStringGetter.Invoke(instance, new object[] {transportDefinition});
-        }
-
         RawCriticalError CreateCriticalErrorHandler()
         {
             settings.TryGet("onCriticalErrorAction", out Func<ICriticalErrorContext, Task> errorAction);
@@ -139,9 +131,6 @@ namespace NServiceBus.Raw
         SettingsHolder settings;
         Func<MessageContext, IDispatchMessages, Task> onMessage;
 
-        static Type connectionStringType = typeof(IEndpointInstance).Assembly.GetType("NServiceBus.TransportConnectionString", true);
-
         static Type hostingSettingsType = typeof(IEndpointInstance).Assembly.GetType("NServiceBus.HostingComponent+Settings", true);
-        static MethodInfo connectionStringGetter = connectionStringType.GetMethod("GetConnectionStringOrRaiseError", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
     }
 }

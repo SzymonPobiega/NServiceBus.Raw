@@ -46,14 +46,15 @@ namespace NServiceBus.Raw
             Settings.Set("Endpoint.SendOnly", sendOnly);
             Settings.Set("TypesToScan", new Type[0]);
             Settings.Set("NServiceBus.Routing.EndpointName", endpointName);
-            Settings.Set<Conventions>(new Conventions()); //Hack for ASB
-            Settings.Set<StartupDiagnosticEntries>(new StartupDiagnosticEntries());
+            Settings.Set(new Conventions()); //Hack for ASB
 
             queueBindings = new QueueBindings();
-            Settings.Set<QueueBindings>(queueBindings);
+            Settings.Set(queueBindings);
 
             Settings.SetDefault("Transactions.IsolationLevel", IsolationLevel.ReadCommitted);
             Settings.SetDefault("Transactions.DefaultTimeout", TransactionManager.DefaultTimeout);
+
+            Settings.PrepareConnectionString();
 
             if (!sendOnly)
             {
@@ -75,7 +76,7 @@ namespace NServiceBus.Raw
         public void CustomErrorHandlingPolicy(IErrorHandlingPolicy customPolicy)
         {
             Guard.AgainstNull(nameof(customPolicy), customPolicy);
-            Settings.Set<IErrorHandlingPolicy>(customPolicy);
+            Settings.Set(customPolicy);
         }
 
         /// <summary>
@@ -151,7 +152,7 @@ namespace NServiceBus.Raw
 
         void ConfigureTransport(TransportDefinition transportDefinition)
         {
-            Settings.Set<TransportDefinition>(transportDefinition);
+            Settings.Set(transportDefinition);
         }
 
         static T Construct<T>(Type type)
