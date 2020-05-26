@@ -48,13 +48,11 @@ namespace NServiceBus.Raw
             Settings.Set("NServiceBus.Routing.EndpointName", endpointName);
             Settings.Set(new Conventions()); //Hack for ASB
 
-            queueBindings = new QueueBindings();
-            Settings.Set(queueBindings);
-
             Settings.SetDefault("Transactions.IsolationLevel", IsolationLevel.ReadCommitted);
             Settings.SetDefault("Transactions.DefaultTimeout", TransactionManager.DefaultTimeout);
 
             Settings.PrepareConnectionString();
+            queueBindings = Settings.Get<QueueBindings>();
 
             if (!sendOnly)
             {
