@@ -33,9 +33,6 @@ namespace NServiceBus.Raw
             var localAddress = transportInfrastructure.ToTransportAddress(mainLogicalAddress);
             settings.SetDefault(mainLogicalAddress);
 
-            var sendInfrastructure = transportInfrastructure.ConfigureSendInfrastructure();
-            var dispatcher = sendInfrastructure.DispatcherFactory();
-
             IPushMessages messagePump = null;
             IManageSubscriptions subscriptionManager = null;
 
@@ -60,6 +57,9 @@ namespace NServiceBus.Raw
                     subscriptionManager = CreateSubscriptionManager(transportInfrastructure);
                 }
             }
+
+            var sendInfrastructure = transportInfrastructure.ConfigureSendInfrastructure();
+            var dispatcher = sendInfrastructure.DispatcherFactory();
 
             await transportInfrastructure.Start().ConfigureAwait(false);
 
