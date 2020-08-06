@@ -9,12 +9,16 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Copyright>Copyright 2010-$([System.DateTime]::UtcNow.ToString(yyyy)) Szymon Pobiega. All rights reserved</Copyright>
     <PackageTags>nservicebus raw messages</PackageTags>
-    <PackageIconUrl>https://raw.githubusercontent.com/SzymonPobiega/NServiceBus.Raw/master/icons/dune-buggy.png</PackageIconUrl>
+    <PackageIcon>dune-buggy.png</PackageIcon>
     <PackageProjectUrl>https://github.com/SzymonPobiega/NServiceBus.Raw</PackageProjectUrl>
     <PackageOutputPath>..\..\nugets</PackageOutputPath>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludePDBsInPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
+
+  <ItemGroup Label="Files">
+    <None Include="..\..\icons\dune-buggy.png" Pack="True" PackagePath="" Visible="false" />
+  </ItemGroup>
 
   <Target Name="IncludePDBsInPackage" Condition="'$(IncludeBuildOutput)' != 'false'">
     <ItemGroup>
