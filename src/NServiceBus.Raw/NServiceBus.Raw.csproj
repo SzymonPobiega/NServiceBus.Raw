@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net452;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBus.Raw.snk</AssemblyOriginatorKeyFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -10,8 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GitVersionTask" Version="4.0.0-*" PrivateAssets="All" />
-    <PackageReference Include="NServiceBus" Version="7.4.0" />
+    <PackageReference Include="GitVersionTask" Version="5.3.7" PrivateAssets="All" />
+    <PackageReference Include="NServiceBus" Version="8.0.0-alpha.561" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -115,7 +115,7 @@ namespace NServiceBus.Raw
 
         static string DefaultName()
         {
-#if NET452
+#if NET472
             return System.Security.Principal.WindowsIdentity.GetCurrent().Name;
 #else
             return null;
