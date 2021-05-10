@@ -7,6 +7,9 @@ using NServiceBus.Transport;
 
 namespace NServiceBus.Raw
 {
+    using Serialization;
+    using Unicast.Messages;
+
     /// <summary>
     /// Configuration used to create a raw endpoint instance.
     /// </summary>
@@ -46,7 +49,6 @@ namespace NServiceBus.Raw
             Settings.Set("Endpoint.SendOnly", sendOnly);
             Settings.Set("TypesToScan", new Type[0]);
             Settings.Set("NServiceBus.Routing.EndpointName", endpointName);
-            Settings.Set(new Conventions()); //Hack for ASB
 
             Settings.SetDefault("Transactions.IsolationLevel", IsolationLevel.ReadCommitted);
             Settings.SetDefault("Transactions.DefaultTimeout", TransactionManager.DefaultTimeout);
@@ -58,9 +60,40 @@ namespace NServiceBus.Raw
             {
                 queueBindings.BindSending(poisonMessageQueue);
                 Settings.Set("NServiceBus.Raw.PoisonMessageQueue", poisonMessageQueue);
-                Settings.Set("errorQueue", poisonMessageQueue); //Hack for MSMQ
                 Settings.SetDefault<IErrorHandlingPolicy>(new DefaultErrorHandlingPolicy(poisonMessageQueue, 5));
             }
+
+            SetTransportSpecificFlags(Settings, poisonMessageQueue);
+        }
+
+        static void SetTransportSpecificFlags(SettingsHolder settings, string poisonQueue)
+        {
+            //To satisfy requirements of various transports
+
+            //MSMQ
+            settings.Set("errorQueue", poisonQueue); //Not SetDefault Because MSMQ transport verifies if that value has been explicitly set
+
+            //RabbitMQ
+            settings.SetDefault("RabbitMQ.RoutingTopologySupportsDelayedDelivery", true);
+
+            //SQS
+            settings.SetDefault("NServiceBus.AmazonSQS.DisableSubscribeBatchingOnStart", true);
+
+            //ASB
+            var builder = new ConventionsBuilder(settings);
+            builder.DefiningEventsAs(type => true);
+            settings.Set(builder.Conventions);
+
+            //ASQ and ASB
+            var serializer = Tuple.Create(new NewtonsoftSerializer() as SerializationDefinition, new SettingsHolder());
+            settings.SetDefault("MainSerializer", serializer);
+
+            //SQS and ASQ
+            bool isMessageType(Type t) => true;
+            var ctor = typeof(MessageMetadataRegistry).GetConstructor(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(Func<Type, bool>) }, null);
+#pragma warning disable CS0618 // Type or member is obsolete
+            settings.SetDefault<MessageMetadataRegistry>(ctor.Invoke(new object[] { (Func<Type, bool>)isMessageType }));
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         /// <summary>
