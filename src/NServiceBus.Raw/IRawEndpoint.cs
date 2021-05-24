@@ -6,12 +6,12 @@ namespace NServiceBus.Raw
     /// <summary>
     /// Allows to send raw messages.
     /// </summary>
-    public interface IRawEndpoint : IDispatchMessages
+    public interface IRawEndpoint : IMessageDispatcher
     {
         /// <summary>
         /// Translates a given logical address into a transport address.
         /// </summary>
-        string ToTransportAddress(LogicalAddress logicalAddress);
+        string ToTransportAddress(QueueAddress queueAddress);
 
         /// <summary>
         /// Returns the transport address of the endpoint.
@@ -31,6 +31,6 @@ namespace NServiceBus.Raw
         /// <summary>
         /// Gets the subscription manager if the underlying transport supports native publish-subscribe.
         /// </summary>
-        IManageSubscriptions SubscriptionManager { get; }
+        ISubscriptionManager SubscriptionManager { get; }
     }
 }

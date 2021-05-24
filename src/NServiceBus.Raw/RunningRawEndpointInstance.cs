@@ -1,14 +1,15 @@
 using System.Threading.Tasks;
-using NServiceBus.Extensibility;
 using NServiceBus.Logging;
 using NServiceBus.Settings;
 using NServiceBus.Transport;
 
 namespace NServiceBus.Raw
 {
+    using System.Threading;
+
     class RunningRawEndpointInstance : IReceivingRawEndpoint
     {
-        public RunningRawEndpointInstance(SettingsHolder settings, RawTransportReceiver receiver, TransportInfrastructure transportInfrastructure, IDispatchMessages dispatcher, IManageSubscriptions subscriptionManager, string localAddress)
+        public RunningRawEndpointInstance(SettingsHolder settings, RawTransportReceiver receiver, TransportInfrastructure transportInfrastructure, IMessageDispatcher dispatcher, ISubscriptionManager subscriptionManager, string localAddress)
         {
             this.settings = settings;
             this.receiver = receiver;
@@ -18,22 +19,22 @@ namespace NServiceBus.Raw
             SubscriptionManager = subscriptionManager;
         }
 
-        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, ContextBag context)
+        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, CancellationToken cancellationToken)
         {
-            return dispatcher.Dispatch(outgoingMessages, transaction, context);
+            return dispatcher.Dispatch(outgoingMessages, transaction, cancellationToken);
         }
 
-        public string ToTransportAddress(LogicalAddress logicalAddress)
+        public string ToTransportAddress(QueueAddress queueAddress)
         {
-            return transportInfrastructure.ToTransportAddress(logicalAddress);
+            return transportInfrastructure.ToTransportAddress(queueAddress);
         }
 
-        public async Task<IStoppableRawEndpoint> StopReceiving()
+        public async Task<IStoppableRawEndpoint> StopReceiving(CancellationToken cancellationToken)
         {
             if (receiver != null)
             {
                 Log.Info("Stopping receiver.");
-                await receiver.Stop().ConfigureAwait(false);
+                await receiver.Stop(cancellationToken).ConfigureAwait(false);
                 Log.Info("Receiver stopped.");
             }
             return new StoppableRawEndpoint(transportInfrastructure, settings);
@@ -42,16 +43,16 @@ namespace NServiceBus.Raw
         public string TransportAddress { get; }
         public string EndpointName => settings.EndpointName();
         public ReadOnlySettings Settings => settings;
-        public IManageSubscriptions SubscriptionManager { get; }
+        public ISubscriptionManager SubscriptionManager { get; }
 
-        public async Task Stop()
+        public async Task Stop(CancellationToken cancellationToken)
         {
-            var stoppable = await StopReceiving().ConfigureAwait(false);
-            await stoppable.Stop();
+            var stoppable = await StopReceiving(cancellationToken).ConfigureAwait(false);
+            await stoppable.Stop(cancellationToken).ConfigureAwait(false);
         }
 
         TransportInfrastructure transportInfrastructure;
-        IDispatchMessages dispatcher;
+        IMessageDispatcher dispatcher;
 
         SettingsHolder settings;
         RawTransportReceiver receiver;

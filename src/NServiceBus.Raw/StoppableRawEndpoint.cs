@@ -1,5 +1,6 @@
 namespace NServiceBus.Raw
 {
+    using System.Threading;
     using System.Threading.Tasks;
     using Logging;
     using Settings;
@@ -16,13 +17,13 @@ namespace NServiceBus.Raw
             this.settings = settings;
         }
 
-        public async Task Stop()
+        public async Task Stop(CancellationToken cancellationToken)
         {
             Log.Info("Initiating shutdown.");
 
             try
             {
-                await transportInfrastructure.Stop().ConfigureAwait(false);
+                await transportInfrastructure.Shutdown(cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException)
             {

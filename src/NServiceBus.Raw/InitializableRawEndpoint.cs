@@ -7,10 +7,11 @@ using NServiceBus.Transport;
 
 namespace NServiceBus.Raw
 {
+    using System.Threading;
 
     class InitializableRawEndpoint
     {
-        public InitializableRawEndpoint(SettingsHolder settings, Func<MessageContext, IDispatchMessages, Task> onMessage)
+        public InitializableRawEndpoint(SettingsHolder settings, Func<MessageContext, IMessageDispatcher, Task> onMessage)
         {
             this.settings = settings;
             this.onMessage = onMessage;
@@ -24,21 +25,21 @@ namespace NServiceBus.Raw
 
             var transportDefinition = settings.Get<TransportDefinition>();
             var connectionString = settings.GetConnectionString();
-            var transportInfrastructure = transportDefinition.Initialize(settings, connectionString);
+            var transportInfrastructure = await transportDefinition.Initialize(settings, connectionString).ConfigureAwait(false);
             settings.Set(transportInfrastructure);
 
             var mainInstance = transportInfrastructure.BindToLocalEndpoint(new EndpointInstance(settings.EndpointName()));
             var baseQueueName = settings.GetOrDefault<string>("BaseInputQueueName") ?? settings.EndpointName();
-            var mainLogicalAddress = LogicalAddress.CreateLocalAddress(baseQueueName, mainInstance.Properties);
-            var localAddress = transportInfrastructure.ToTransportAddress(mainLogicalAddress);
-            settings.SetDefault(mainLogicalAddress);
+            var mainQueueAddress = new QueueAddress(baseQueueName, null, mainInstance.Properties, null);
+            var localAddress = mainQueueAddress; //TODO: Is this correct?
+            settings.SetDefault(mainQueueAddress);
 
-            IPushMessages messagePump = null;
-            IManageSubscriptions subscriptionManager = null;
+            IMessageReceiver messagePump = null;
+            ISubscriptionManager subscriptionManager = null;
 
             if (!settings.GetOrDefault<bool>("Endpoint.SendOnly"))
             {
-                RegisterReceivingComponent(settings, mainLogicalAddress, localAddress);
+                RegisterReceivingComponent(settings, mainQueueAddress, localAddress);
 
                 var receiveInfrastructure = transportInfrastructure.ConfigureReceiveInfrastructure();
                 var queueCreator = receiveInfrastructure.QueueCreatorFactory();
@@ -74,7 +75,7 @@ namespace NServiceBus.Raw
             settings.Set(hostingSettingsType.FullName, hostingSettings);
         }
 
-        static IManageSubscriptions CreateSubscriptionManager(TransportInfrastructure transportInfra)
+        static ISubscriptionManager CreateSubscriptionManager(TransportInfrastructure transportInfra)
         {
             var subscriptionInfra = transportInfra.ConfigureSubscriptionInfrastructure();
             var factoryProperty = typeof(TransportSubscriptionInfrastructure).GetProperty("SubscriptionManagerFactory", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
@@ -82,7 +83,7 @@ namespace NServiceBus.Raw
             return factoryInstance();
         }
 
-        static void RegisterReceivingComponent(SettingsHolder settings, LogicalAddress logicalAddress, string localAddress)
+        static void RegisterReceivingComponent(SettingsHolder settings, QueueAddress logicalAddress, string localAddress)
         {
             var type = typeof(Endpoint).Assembly.GetType("NServiceBus.ReceiveComponent+Configuration", true);
             var ctor = type.GetConstructors()[0];
@@ -124,12 +125,12 @@ namespace NServiceBus.Raw
 
         RawCriticalError CreateCriticalErrorHandler()
         {
-            settings.TryGet("onCriticalErrorAction", out Func<ICriticalErrorContext, Task> errorAction);
+            settings.TryGet("onCriticalErrorAction", out Func<ICriticalErrorContext, CancellationToken, Task> errorAction);
             return new RawCriticalError(errorAction);
         }
 
         SettingsHolder settings;
-        Func<MessageContext, IDispatchMessages, Task> onMessage;
+        Func<MessageContext, IMessageDispatcher, Task> onMessage;
 
         static Type hostingSettingsType = typeof(IEndpointInstance).Assembly.GetType("NServiceBus.HostingComponent+Settings", true);
     }

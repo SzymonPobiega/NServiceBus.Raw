@@ -13,6 +13,6 @@ namespace NServiceBus.Raw
         /// </summary>
         /// <param name="handlingContext">Error handling context.</param>
         /// <param name="dispatcher">Dispatcher.</param>
-        Task<ErrorHandleResult> OnError(IErrorHandlingPolicyContext handlingContext, IDispatchMessages dispatcher);
+        Task<ErrorHandleResult> OnError(IErrorHandlingPolicyContext handlingContext, IMessageDispatcher dispatcher);
     }
 }
