@@ -12,14 +12,16 @@ namespace NServiceBus.Raw
 
     class RawEndpointErrorHandlingPolicy
     {
-        string localAddress;
-        IMessageDispatcher dispatcher;
-        Dictionary<string, string> staticFaultMetadata;
-        IErrorHandlingPolicy policy;
+        readonly string localAddress;
+        readonly string errorQueue;
+        readonly IMessageDispatcher dispatcher;
+        readonly Dictionary<string, string> staticFaultMetadata;
+        readonly IErrorHandlingPolicy policy;
 
-        public RawEndpointErrorHandlingPolicy(string endpointName, string localAddress, IMessageDispatcher dispatcher, IErrorHandlingPolicy policy)
+        public RawEndpointErrorHandlingPolicy(string endpointName, string localAddress, string errorQueue, IMessageDispatcher dispatcher, IErrorHandlingPolicy policy)
         {
             this.localAddress = localAddress;
+            this.errorQueue = errorQueue;
             this.dispatcher = dispatcher;
             this.policy = policy;
 
@@ -33,7 +35,7 @@ namespace NServiceBus.Raw
 
         public Task<ErrorHandleResult> OnError(ErrorContext errorContext, CancellationToken cancellationToken)
         {
-            return policy.OnError(new Context(localAddress, errorContext, MoveToErrorQueue), dispatcher);
+            return policy.OnError(new Context(errorQueue, localAddress, errorContext, MoveToErrorQueue), dispatcher);
         }
 
         async Task<ErrorHandleResult> MoveToErrorQueue(ErrorContext errorContext, string errorQueue, bool includeStandardHeaders, CancellationToken cancellationToken)
@@ -64,10 +66,12 @@ namespace NServiceBus.Raw
         class Context : IErrorHandlingPolicyContext
         {
             Func<ErrorContext, string, bool, CancellationToken, Task<ErrorHandleResult>> moveToErrorQueue;
+            string configuredErrorQueue;
 
-            public Context(string failedQueue, ErrorContext error,
+            public Context(string errorQueue, string failedQueue, ErrorContext error,
                     Func<ErrorContext, string, bool, CancellationToken, Task<ErrorHandleResult>> moveToErrorQueue)
             {
+                configuredErrorQueue = errorQueue;
                 this.moveToErrorQueue = moveToErrorQueue;
                 Error = error;
                 FailedQueue = failedQueue;
@@ -78,6 +82,11 @@ namespace NServiceBus.Raw
                 CancellationToken cancellationToken = default)
             {
                 return moveToErrorQueue(Error, errorQueue, attachStandardFailureHeaders, cancellationToken);
+            }
+
+            public Task<ErrorHandleResult> MoveToErrorQueue(bool attachStandardFailureHeaders = true, CancellationToken cancellationToken = default)
+            {
+                return moveToErrorQueue(Error, configuredErrorQueue, attachStandardFailureHeaders, cancellationToken);
             }
 
             public ErrorContext Error { get; }

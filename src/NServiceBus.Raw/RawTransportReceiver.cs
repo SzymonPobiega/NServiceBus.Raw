@@ -9,12 +9,12 @@ namespace NServiceBus.Raw
 
     class RawTransportReceiver
     {
-        public RawTransportReceiver(IMessageReceiver pushMessages, IMessageDispatcher dispatcher, Func<MessageContext, IMessageDispatcher, Task> onMessage, ReceiveSettings receiveSettings, PushRuntimeSettings pushRuntimeSettings, RawEndpointErrorHandlingPolicy errorHandlingPolicy)
+        public RawTransportReceiver(IMessageReceiver pushMessages, IMessageDispatcher dispatcher, OnMessage onMessage, string transportAddress, PushRuntimeSettings pushRuntimeSettings, RawEndpointErrorHandlingPolicy errorHandlingPolicy)
         {
             this.pushRuntimeSettings = pushRuntimeSettings;
-            this.receiveSettings = receiveSettings;
             this.receiver = pushMessages;
-            this.onMessage = (context, cancellationToken) => onMessage(context, dispatcher);
+            this.transportAddress = transportAddress;
+            this.onMessage = onMessage;
             this.onError = (context, cancellationToken) => errorHandlingPolicy.OnError(context, cancellationToken);
         }
 
@@ -30,7 +30,7 @@ namespace NServiceBus.Raw
                 throw new InvalidOperationException("The transport is already started");
             }
 
-            Logger.DebugFormat("Receiver is starting, listening to queue {0}.", receiveSettings.ReceiveAddress);
+            Logger.DebugFormat("Receiver is starting, listening to queue {0}.", transportAddress);
 
             receiver.StartReceive(cancellationToken);
 
@@ -54,10 +54,10 @@ namespace NServiceBus.Raw
 
         bool isStarted;
         PushRuntimeSettings pushRuntimeSettings;
-        ReceiveSettings receiveSettings;
-        IMessageReceiver receiver;
-        OnMessage onMessage;
-        OnError onError;
+        readonly IMessageReceiver receiver;
+        readonly string transportAddress;
+        readonly OnMessage onMessage;
+        readonly OnError onError;
 
         static ILog Logger = LogManager.GetLogger<RawTransportReceiver>();
     }

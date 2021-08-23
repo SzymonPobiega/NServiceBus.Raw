@@ -10,13 +10,21 @@ namespace NServiceBus.Raw
     public interface IErrorHandlingPolicyContext
     {
         /// <summary>
-        /// Moves a given message to the error queue.
+        /// Moves a given message to a specific error queue.
         /// </summary>
         /// <param name="errorQueue">Error queue address.</param>
         /// <param name="attachStandardFailureHeaders">If should include standard error information.</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns></returns>
         Task<ErrorHandleResult> MoveToErrorQueue(string errorQueue, bool attachStandardFailureHeaders = true, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Moves a given message to the configured error queue.
+        /// </summary>
+        /// <param name="attachStandardFailureHeaders">If should include standard error information.</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns></returns>
+        Task<ErrorHandleResult> MoveToErrorQueue(bool attachStandardFailureHeaders = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the error information.

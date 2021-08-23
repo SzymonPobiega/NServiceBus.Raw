@@ -1,6 +1,5 @@
 namespace NServiceBus.Raw
 {
-    using Settings;
     using Transport;
 
     /// <summary>
@@ -22,11 +21,6 @@ namespace NServiceBus.Raw
         /// Returns the logical name of the endpoint.
         /// </summary>
         string EndpointName { get; }
-
-        /// <summary>
-        /// Gets the settings used to initialize this endpoint instance.
-        /// </summary>
-        ReadOnlySettings Settings { get; }
 
         /// <summary>
         /// Gets the subscription manager if the underlying transport supports native publish-subscribe.

@@ -1,12 +1,12 @@
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Transactions;
 using NServiceBus.Settings;
 using NServiceBus.Transport;
 
 namespace NServiceBus.Raw
 {
+    using System.Threading;
     using Serialization;
     using Unicast.Messages;
 
@@ -15,56 +15,55 @@ namespace NServiceBus.Raw
     /// </summary>
     public class RawEndpointConfiguration
     {
-        Func<MessageContext, IMessageDispatcher, Task> onMessage;
-        QueueBindings queueBindings;
+        readonly string endpointName;
+        readonly string queueName;
+        readonly TransportDefinition transportDefinition;
+        readonly OnMessage onMessage;
+        readonly string errorQueue;
+        IErrorHandlingPolicy errorHandlingPolicy;
+        int concurrencyLimit;
+        Action<string, Exception, CancellationToken> criticalErrorAction = (s, exception, arg3) => { };
 
         /// <summary>
         /// Creates a send-only raw endpoint config.
         /// </summary>
-        /// <param name="endpointName">The name of the endpoint being configured.</param>
-        /// <returns></returns>
-        public static RawEndpointConfiguration CreateSendOnly(string endpointName)
+        /// <param name="endpointName">The name of the endpoint.</param>
+        /// <param name="transport">Transport to use.</param>
+        public static SendOnlyRawEndpointConfiguration CreateSendOnly(string endpointName, TransportDefinition transport)
         {
-            return new RawEndpointConfiguration(endpointName, null, null);
+            return new SendOnlyRawEndpointConfiguration(endpointName, transport);
         }
 
         /// <summary>
         /// Creates a regular raw endpoint config.
         /// </summary>
-        /// <param name="endpointName">The name of the endpoint being configured.</param>
+        /// <param name="endpointName">The name of the endpoint.</param>
+        /// <param name="queueName">The address of the queue to receive from.</param>
+        /// <param name="transport">Transport to use.</param>
         /// <param name="onMessage">Callback invoked when a message is received.</param>
-        /// <param name="poisonMessageQueue">Queue to move poison messages that can't be received from transport.</param>
+        /// <param name="errorQueue">Queue to move messages that fail to be received or processed.</param>
         /// <returns></returns>
-        public static RawEndpointConfiguration Create(string endpointName, Func<MessageContext, IMessageDispatcher, Task> onMessage, string poisonMessageQueue)
+        public static RawEndpointConfiguration Create(string endpointName, string queueName, TransportDefinition transport, OnMessage onMessage, string errorQueue)
         {
-            return new RawEndpointConfiguration(endpointName, onMessage, poisonMessageQueue);
+            return new RawEndpointConfiguration(endpointName, queueName, transport, onMessage, errorQueue);
         }
 
-        RawEndpointConfiguration(string endpointName, Func<MessageContext, IMessageDispatcher, Task> onMessage, string poisonMessageQueue)
+        RawEndpointConfiguration(string endpointName, string queueName, TransportDefinition transport, OnMessage onMessage, string errorQueue)
         {
-            this.onMessage = onMessage;
-            ValidateEndpointName(endpointName);
-
-            var sendOnly = onMessage == null;
-            Settings.Set("Endpoint.SendOnly", sendOnly);
-            Settings.Set("TypesToScan", new Type[0]);
-            Settings.Set("NServiceBus.Routing.EndpointName", endpointName);
-
-            Settings.SetDefault("Transactions.IsolationLevel", IsolationLevel.ReadCommitted);
-            Settings.SetDefault("Transactions.DefaultTimeout", TransactionManager.DefaultTimeout);
-
-            Settings.PrepareConnectionString();
-            queueBindings = Settings.Get<QueueBindings>();
-
-            if (!sendOnly)
+            if (string.IsNullOrWhiteSpace(endpointName))
             {
-                queueBindings.BindSending(poisonMessageQueue);
-                Settings.Set("NServiceBus.Raw.PoisonMessageQueue", poisonMessageQueue);
-                Settings.SetDefault<IErrorHandlingPolicy>(new DefaultErrorHandlingPolicy(poisonMessageQueue, 5));
+                throw new ArgumentException("Endpoint name must not be empty", nameof(endpointName));
             }
 
-            SetTransportSpecificFlags(Settings, poisonMessageQueue);
+            this.endpointName = endpointName;
+            this.queueName = queueName;
+            this.transportDefinition = transport;
+            this.onMessage = onMessage;
+            this.errorQueue = errorQueue;
+
+            ErrorHandlingPolicy = new DefaultErrorHandlingPolicy(5);
         }
+
 
         static void SetTransportSpecificFlags(SettingsHolder settings, string poisonQueue)
         {
@@ -97,124 +96,65 @@ namespace NServiceBus.Raw
         }
 
         /// <summary>
-        /// Exposes raw settings object.
+        /// The error handling policy to use.
         /// </summary>
-        public SettingsHolder Settings { get; } = new SettingsHolder();
-
-        /// <summary>
-        /// Instructs the endpoint to use a custom error handling policy.
-        /// </summary>
-        public void CustomErrorHandlingPolicy(IErrorHandlingPolicy customPolicy)
+        public IErrorHandlingPolicy ErrorHandlingPolicy
         {
-            Guard.AgainstNull(nameof(customPolicy), customPolicy);
-            Settings.Set(customPolicy);
-        }
-
-        /// <summary>
-        /// Sets the number of immediate retries when message processing fails.
-        /// </summary>
-        public void DefaultErrorHandlingPolicy(string errorQueue, int immediateRetryCount)
-        {
-            Guard.AgainstNegative(nameof(immediateRetryCount), immediateRetryCount);
-            Guard.AgainstNullAndEmpty(nameof(errorQueue), errorQueue);
-            Settings.Set<IErrorHandlingPolicy>(new DefaultErrorHandlingPolicy(errorQueue, immediateRetryCount));
-        }
-
-        /// <summary>
-        /// Instructs the endpoint to automatically create input queue and poison queue if they do not exist.
-        /// </summary>
-        public void AutoCreateQueue(string identity = null)
-        {
-            Settings.Set("NServiceBus.Raw.CreateQueue", true);
-            if (identity != null)
+            get => errorHandlingPolicy;
+            set
             {
-                Settings.Set("NServiceBus.Raw.Identity", identity);
+                Guard.AgainstNull(nameof(value), value);
+                errorHandlingPolicy = value;
             }
         }
 
         /// <summary>
-        /// Instructs the endpoint to automatically create input queue, poison queue and provided additional queues if they do not exist.
+        /// Configures if the endpoint should attempt to set up the infrastructure (e.g. queues and topics) before starting.
         /// </summary>
-        public void AutoCreateQueues(string[] additionalQueues, string identity = null)
-        {
-            foreach (var additionalQueue in additionalQueues)
-            {
-                queueBindings.BindSending(additionalQueue);
-            }
-            AutoCreateQueue(identity);
-        }
+        public InfrastructureSetup InfrastructureSetup { get; set; }
 
         /// <summary>
         /// Instructs the transport to limits the allowed concurrency when processing messages.
         /// </summary>
-        /// <param name="maxConcurrency">The max concurrency allowed.</param>
-        public void LimitMessageProcessingConcurrencyTo(int maxConcurrency)
+        public int ConcurrencyLimit
         {
-            Guard.AgainstNegativeAndZero(nameof(maxConcurrency), maxConcurrency);
-
-            Settings.Set("MaxConcurrency", maxConcurrency);
+            get => concurrencyLimit;
+            set
+            {
+                Guard.AgainstNegativeAndZero(nameof(value), value);
+                concurrencyLimit = value;
+            }
         }
 
         /// <summary>
-        /// Configures NServiceBus to use the given transport.
+        /// Action to invoke when the receiver detects a critical error.
         /// </summary>
-        public T UseTransport<T>() where T : TransportDefinition, new()
+        public Action<string, Exception, CancellationToken> CriticalErrorAction
         {
-            // var type = typeof(TransportExtensions).MakeGenericType(typeof(T));
-            var transportDefinition = new T();
-            //var extension = (TransportExtensions<T>)Activator.CreateInstance(type, Settings);
-
-            ConfigureTransport(transportDefinition);
-            return transportDefinition;
-        }
-
-        /// <summary>
-        /// Configures NServiceBus to use the given transport.
-        /// </summary>
-        public TransportDefinition UseTransport(Type transportDefinitionType)
-        {
-            Guard.AgainstNull(nameof(transportDefinitionType), transportDefinitionType);
-            Guard.TypeHasDefaultConstructor(transportDefinitionType, nameof(transportDefinitionType));
-
-            var transportDefinition = Construct<TransportDefinition>(transportDefinitionType);
-            ConfigureTransport(transportDefinition);
-            return transportDefinition;
-        }
-
-        void ConfigureTransport(TransportDefinition transportDefinition)
-        {
-            Settings.Set(transportDefinition);
-        }
-
-        static T Construct<T>(Type type)
-        {
-            var defaultConstructor = type.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[]
+            get => criticalErrorAction;
+            set
             {
-            }, null);
-            if (defaultConstructor != null)
-            {
-                return (T)defaultConstructor.Invoke(null);
+                Guard.AgainstNull(nameof(value), value);
+                criticalErrorAction = value;
             }
-
-            return (T)Activator.CreateInstance(type);
         }
 
-        internal InitializableRawEndpoint Build()
+        internal async Task<IStartableRawEndpoint> Initialize()
         {
-            return new InitializableRawEndpoint(Settings, onMessage);
-        }
+            var hostSettings = new HostSettings(endpointName, endpointName, new StartupDiagnosticEntries(), CriticalErrorAction, InfrastructureSetup.Create);
 
-        static void ValidateEndpointName(string endpointName)
-        {
-            if (string.IsNullOrWhiteSpace(endpointName))
-            {
-                throw new ArgumentException("Endpoint name must not be empty", nameof(endpointName));
-            }
+            var receiveSettings = new ReceiveSettings("Main", queueName, true, false, errorQueue);
 
-            if (endpointName.Contains("@"))
-            {
-                throw new ArgumentException("Endpoint name must not contain an '@' character.", nameof(endpointName));
-            }
+            var transportInfrastructure = await transportDefinition.Initialize(hostSettings, new[] { receiveSettings }, InfrastructureSetup.AdditionalQueues ?? new string[0])
+                .ConfigureAwait(false);
+
+            var pump = transportInfrastructure.Receivers[receiveSettings.Id];
+
+            var receiver = new RawTransportReceiver(pump, transportInfrastructure.Dispatcher, onMessage, queueName, new PushRuntimeSettings(concurrencyLimit),
+                new RawEndpointErrorHandlingPolicy(errorQueue, endpointName, queueName, transportInfrastructure.Dispatcher, errorHandlingPolicy));
+
+            var startableEndpoint = new StartableRawEndpoint(transportDefinition, transportInfrastructure, receiver, endpointName, queueName);
+            return startableEndpoint;
         }
     }
 }

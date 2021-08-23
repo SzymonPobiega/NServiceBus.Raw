@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using NServiceBus.Logging;
-using NServiceBus.Settings;
 using NServiceBus.Transport;
 
 namespace NServiceBus.Raw
@@ -9,13 +8,14 @@ namespace NServiceBus.Raw
 
     class RunningRawEndpointInstance : IReceivingRawEndpoint
     {
-        public RunningRawEndpointInstance(SettingsHolder settings, RawTransportReceiver receiver, TransportInfrastructure transportInfrastructure, IMessageDispatcher dispatcher, ISubscriptionManager subscriptionManager, string localAddress)
+        public RunningRawEndpointInstance(RawTransportReceiver receiver, TransportDefinition transportDefinition, TransportInfrastructure transportInfrastructure, IMessageDispatcher dispatcher, ISubscriptionManager subscriptionManager, string endpointName, string transportAddress)
         {
-            this.settings = settings;
             this.receiver = receiver;
+            this.transportDefinition = transportDefinition;
             this.transportInfrastructure = transportInfrastructure;
             this.dispatcher = dispatcher;
-            this.TransportAddress = localAddress;
+            this.endpointName = endpointName;
+            this.TransportAddress = transportAddress;
             SubscriptionManager = subscriptionManager;
         }
 
@@ -26,7 +26,7 @@ namespace NServiceBus.Raw
 
         public string ToTransportAddress(QueueAddress queueAddress)
         {
-            return transportInfrastructure.ToTransportAddress(queueAddress);
+            return transportDefinition.ToTransportAddress(queueAddress);
         }
 
         public async Task<IStoppableRawEndpoint> StopReceiving(CancellationToken cancellationToken)
@@ -37,12 +37,11 @@ namespace NServiceBus.Raw
                 await receiver.Stop(cancellationToken).ConfigureAwait(false);
                 Log.Info("Receiver stopped.");
             }
-            return new StoppableRawEndpoint(transportInfrastructure, settings);
+            return new StoppableRawEndpoint(transportInfrastructure);
         }
 
         public string TransportAddress { get; }
-        public string EndpointName => settings.EndpointName();
-        public ReadOnlySettings Settings => settings;
+        public string EndpointName => endpointName;
         public ISubscriptionManager SubscriptionManager { get; }
 
         public async Task Stop(CancellationToken cancellationToken)
@@ -53,9 +52,10 @@ namespace NServiceBus.Raw
 
         TransportInfrastructure transportInfrastructure;
         IMessageDispatcher dispatcher;
+        readonly string endpointName;
 
-        SettingsHolder settings;
         RawTransportReceiver receiver;
+        readonly TransportDefinition transportDefinition;
 
         static ILog Log = LogManager.GetLogger<RunningRawEndpointInstance>();
     }

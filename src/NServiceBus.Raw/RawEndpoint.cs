@@ -16,8 +16,7 @@ namespace NServiceBus.Raw
         public static Task<IStartableRawEndpoint> Create(RawEndpointConfiguration configuration)
         {
             Guard.AgainstNull(nameof(configuration), configuration);
-            var initializable = configuration.Build();
-            return initializable.Initialize();
+            return configuration.Initialize();
         }
 
         /// <summary>
