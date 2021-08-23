@@ -15,7 +15,7 @@ namespace NServiceBus.Raw
     /// </summary>
     public class RawEndpointConfiguration
     {
-        Func<MessageContext, IDispatchMessages, Task> onMessage;
+        Func<MessageContext, IMessageDispatcher, Task> onMessage;
         QueueBindings queueBindings;
 
         /// <summary>
@@ -35,12 +35,12 @@ namespace NServiceBus.Raw
         /// <param name="onMessage">Callback invoked when a message is received.</param>
         /// <param name="poisonMessageQueue">Queue to move poison messages that can't be received from transport.</param>
         /// <returns></returns>
-        public static RawEndpointConfiguration Create(string endpointName, Func<MessageContext, IDispatchMessages, Task> onMessage, string poisonMessageQueue)
+        public static RawEndpointConfiguration Create(string endpointName, Func<MessageContext, IMessageDispatcher, Task> onMessage, string poisonMessageQueue)
         {
             return new RawEndpointConfiguration(endpointName, onMessage, poisonMessageQueue);
         }
 
-        RawEndpointConfiguration(string endpointName, Func<MessageContext, IDispatchMessages, Task> onMessage, string poisonMessageQueue)
+        RawEndpointConfiguration(string endpointName, Func<MessageContext, IMessageDispatcher, Task> onMessage, string poisonMessageQueue)
         {
             this.onMessage = onMessage;
             ValidateEndpointName(endpointName);
@@ -92,7 +92,7 @@ namespace NServiceBus.Raw
             bool isMessageType(Type t) => true;
             var ctor = typeof(MessageMetadataRegistry).GetConstructor(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(Func<Type, bool>) }, null);
 #pragma warning disable CS0618 // Type or member is obsolete
-            settings.SetDefault<MessageMetadataRegistry>(ctor.Invoke(new object[] { (Func<Type, bool>)isMessageType }));
+            settings.SetDefault<MessageMetadataRegistry>(() => ctor.Invoke(new object[] { (Func<Type, bool>)isMessageType }));
 #pragma warning restore CS0618 // Type or member is obsolete
         }
 
@@ -158,27 +158,27 @@ namespace NServiceBus.Raw
         /// <summary>
         /// Configures NServiceBus to use the given transport.
         /// </summary>
-        public TransportExtensions<T> UseTransport<T>() where T : TransportDefinition, new()
+        public T UseTransport<T>() where T : TransportDefinition, new()
         {
-            var type = typeof(TransportExtensions<>).MakeGenericType(typeof(T));
+            // var type = typeof(TransportExtensions).MakeGenericType(typeof(T));
             var transportDefinition = new T();
-            var extension = (TransportExtensions<T>)Activator.CreateInstance(type, Settings);
+            //var extension = (TransportExtensions<T>)Activator.CreateInstance(type, Settings);
 
             ConfigureTransport(transportDefinition);
-            return extension;
+            return transportDefinition;
         }
 
         /// <summary>
         /// Configures NServiceBus to use the given transport.
         /// </summary>
-        public TransportExtensions UseTransport(Type transportDefinitionType)
+        public TransportDefinition UseTransport(Type transportDefinitionType)
         {
             Guard.AgainstNull(nameof(transportDefinitionType), transportDefinitionType);
             Guard.TypeHasDefaultConstructor(transportDefinitionType, nameof(transportDefinitionType));
 
             var transportDefinition = Construct<TransportDefinition>(transportDefinitionType);
             ConfigureTransport(transportDefinition);
-            return new TransportExtensions(Settings);
+            return transportDefinition;
         }
 
         void ConfigureTransport(TransportDefinition transportDefinition)

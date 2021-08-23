@@ -6,11 +6,13 @@ using NServiceBus.Transport;
 
 namespace NServiceBus.Raw
 {
-    using Extensibility;
+    using System.Threading;
 
     class StartableRawEndpoint : IStartableRawEndpoint
     {
-        public StartableRawEndpoint(SettingsHolder settings, TransportInfrastructure transportInfrastructure, RawCriticalError criticalError, IPushMessages messagePump, IDispatchMessages dispatcher, IManageSubscriptions subscriptionManager, Func<MessageContext, IDispatchMessages, Task> onMessage, string localAddress)
+        public StartableRawEndpoint(SettingsHolder settings, TransportInfrastructure transportInfrastructure,
+            RawCriticalError criticalError, IMessageReceiver messagePump, IMessageDispatcher dispatcher,
+            ISubscriptionManager subscriptionManager, Func<MessageContext, IMessageDispatcher, Task> onMessage, string localAddress)
         {
             this.criticalError = criticalError;
             this.messagePump = messagePump;
@@ -22,47 +24,47 @@ namespace NServiceBus.Raw
             SubscriptionManager = subscriptionManager;
         }
 
-        public async Task<IReceivingRawEndpoint> Start()
+        public async Task<IReceivingRawEndpoint> Start(CancellationToken cancellationToken)
         {
             var receiver = CreateReceiver();
 
             if (receiver != null)
             {
-                await InitializeReceiver(receiver).ConfigureAwait(false);
+                await InitializeReceiver(receiver, cancellationToken).ConfigureAwait(false);
             }
 
             var runningInstance = new RunningRawEndpointInstance(settings, receiver, transportInfrastructure, dispatcher, SubscriptionManager, localAddress);
             // set the started endpoint on CriticalError to pass the endpoint to the critical error action
-            criticalError.SetEndpoint(runningInstance);
+            criticalError.SetEndpoint(runningInstance, cancellationToken);
 
             if (receiver != null)
             {
-                StartReceiver(receiver);
+                StartReceiver(receiver, cancellationToken);
             }
             return runningInstance;
         }
 
-        public IManageSubscriptions SubscriptionManager { get; }
+        public ISubscriptionManager SubscriptionManager { get; }
 
         public string TransportAddress => localAddress;
         public string EndpointName => settings.EndpointName();
         public ReadOnlySettings Settings => settings;
 
-        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, ContextBag context)
+        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, CancellationToken cancellationToken)
         {
-            return dispatcher.Dispatch(outgoingMessages, transaction, context);
+            return dispatcher.Dispatch(outgoingMessages, transaction, cancellationToken);
         }
 
-        public string ToTransportAddress(LogicalAddress logicalAddress)
+        public string ToTransportAddress(QueueAddress queueAddress)
         {
-            return transportInfrastructure.ToTransportAddress(logicalAddress);
+            return queueAddress.BaseAddress; // transportInfrastructure.ToTransportAddress(queueAddress);
         }
 
-        static void StartReceiver(RawTransportReceiver receiver)
+        static void StartReceiver(RawTransportReceiver receiver, CancellationToken cancellationToken)
         {
             try
             {
-                receiver.Start();
+                receiver.Start(cancellationToken);
             }
             catch (Exception ex)
             {
@@ -71,11 +73,11 @@ namespace NServiceBus.Raw
             }
         }
 
-        static async Task InitializeReceiver(RawTransportReceiver receiver)
+        static async Task InitializeReceiver(RawTransportReceiver receiver, CancellationToken cancellationToken)
         {
             try
             {
-                await receiver.Init().ConfigureAwait(false);
+                await receiver.Initialize(cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -93,7 +95,7 @@ namespace NServiceBus.Raw
 
             var purgeOnStartup = settings.GetOrDefault<bool>("Transport.PurgeOnStartup");
             var poisonMessageQueue = settings.Get<string>("NServiceBus.Raw.PoisonMessageQueue");
-            
+
 
 
             var receiver = BuildMainReceiver(poisonMessageQueue, purgeOnStartup, GetTransportTransactionMode());
@@ -103,6 +105,7 @@ namespace NServiceBus.Raw
 
         TransportTransactionMode GetTransportTransactionMode()
         {
+            //TODO: How to get transaction mode
             var transportTransactionSupport = settings.Get<TransportInfrastructure>().TransactionMode;
 
             //if user haven't asked for a explicit level use what the transport supports
@@ -121,10 +124,12 @@ namespace NServiceBus.Raw
 
         RawTransportReceiver BuildMainReceiver(string poisonMessageQueue, bool purgeOnStartup, TransportTransactionMode requiredTransactionSupport)
         {
-            var pushSettings = new PushSettings(localAddress, poisonMessageQueue, purgeOnStartup, requiredTransactionSupport);
+            var usePublishSubscribe = false; //TODO: Where to read this from?
+            var identifier = Guid.NewGuid().ToString();
+            var receiveSettings = new ReceiveSettings(identifier, localAddress, usePublishSubscribe, purgeOnStartup, poisonMessageQueue);
             var dequeueLimitations = GetDequeueLimitationsForReceivePipeline();
             var errorHandlingPolicy = settings.Get<IErrorHandlingPolicy>();
-            var receiver = new RawTransportReceiver(messagePump, dispatcher, onMessage, pushSettings, dequeueLimitations, criticalError,
+            var receiver = new RawTransportReceiver(messagePump, dispatcher, onMessage, receiveSettings, dequeueLimitations,
                 new RawEndpointErrorHandlingPolicy(settings.EndpointName(), localAddress, dispatcher, errorHandlingPolicy));
             return receiver;
         }
@@ -142,9 +147,9 @@ namespace NServiceBus.Raw
         SettingsHolder settings;
         TransportInfrastructure transportInfrastructure;
         RawCriticalError criticalError;
-        IPushMessages messagePump;
-        IDispatchMessages dispatcher;
-        Func<MessageContext, IDispatchMessages, Task> onMessage;
+        IMessageReceiver messagePump;
+        IMessageDispatcher dispatcher;
+        Func<MessageContext, IMessageDispatcher, Task> onMessage;
         string localAddress;
 
         static ILog Logger = LogManager.GetLogger<StartableRawEndpoint>();

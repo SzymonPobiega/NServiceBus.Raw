@@ -5,46 +5,46 @@ using NServiceBus.Transport;
 
 namespace NServiceBus.Raw
 {
+    using System.Threading;
+
     class RawTransportReceiver
     {
-        public RawTransportReceiver(IPushMessages pushMessages, IDispatchMessages dispatcher, Func<MessageContext, IDispatchMessages, Task> onMessage, PushSettings pushSettings, PushRuntimeSettings pushRuntimeSettings, CriticalError criticalError, RawEndpointErrorHandlingPolicy errorHandlingPolicy)
+        public RawTransportReceiver(IMessageReceiver pushMessages, IMessageDispatcher dispatcher, Func<MessageContext, IMessageDispatcher, Task> onMessage, ReceiveSettings receiveSettings, PushRuntimeSettings pushRuntimeSettings, RawEndpointErrorHandlingPolicy errorHandlingPolicy)
         {
-            this.criticalError = criticalError;
-            this.errorHandlingPolicy = errorHandlingPolicy;
             this.pushRuntimeSettings = pushRuntimeSettings;
-            this.pushSettings = pushSettings;
-
-            receiver = pushMessages;
-            this.onMessage = context => onMessage(context, dispatcher);
+            this.receiveSettings = receiveSettings;
+            this.receiver = pushMessages;
+            this.onMessage = (context, cancellationToken) => onMessage(context, dispatcher);
+            this.onError = (context, cancellationToken) => errorHandlingPolicy.OnError(context, cancellationToken);
         }
 
-        public Task Init()
+        public Task Initialize(CancellationToken cancellationToken)
         {
-            return receiver.Init(ctx => onMessage(ctx), ctx => errorHandlingPolicy.OnError(ctx), criticalError, pushSettings);
+            return receiver.Initialize(pushRuntimeSettings, onMessage, onError, cancellationToken);
         }
 
-        public void Start()
+        public void Start(CancellationToken cancellationToken)
         {
             if (isStarted)
             {
                 throw new InvalidOperationException("The transport is already started");
             }
 
-            Logger.DebugFormat("Receiver is starting, listening to queue {0}.", pushSettings.InputQueue);
+            Logger.DebugFormat("Receiver is starting, listening to queue {0}.", receiveSettings.ReceiveAddress);
 
-            receiver.Start(pushRuntimeSettings);
+            receiver.StartReceive(cancellationToken);
 
             isStarted = true;
         }
 
-        public async Task Stop()
+        public async Task Stop(CancellationToken cancellationToken)
         {
             if (!isStarted)
             {
                 return;
             }
 
-            await receiver.Stop().ConfigureAwait(false);
+            await receiver.StopReceive(cancellationToken).ConfigureAwait(false);
             if (receiver is IDisposable disposable)
             {
                 disposable.Dispose();
@@ -52,13 +52,12 @@ namespace NServiceBus.Raw
             isStarted = false;
         }
 
-        CriticalError criticalError;
-        RawEndpointErrorHandlingPolicy errorHandlingPolicy;
         bool isStarted;
         PushRuntimeSettings pushRuntimeSettings;
-        PushSettings pushSettings;
-        IPushMessages receiver;
-        Func<MessageContext, Task> onMessage;
+        ReceiveSettings receiveSettings;
+        IMessageReceiver receiver;
+        OnMessage onMessage;
+        OnError onError;
 
         static ILog Logger = LogManager.GetLogger<RawTransportReceiver>();
     }

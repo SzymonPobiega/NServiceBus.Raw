@@ -1,5 +1,6 @@
 namespace NServiceBus.Raw
 {
+    using System.Threading;
     using System.Threading.Tasks;
     using Transport;
 
@@ -13,8 +14,9 @@ namespace NServiceBus.Raw
         /// </summary>
         /// <param name="errorQueue">Error queue address.</param>
         /// <param name="attachStandardFailureHeaders">If should include standard error information.</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns></returns>
-        Task<ErrorHandleResult> MoveToErrorQueue(string errorQueue, bool attachStandardFailureHeaders = true);
+        Task<ErrorHandleResult> MoveToErrorQueue(string errorQueue, bool attachStandardFailureHeaders = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the error information.

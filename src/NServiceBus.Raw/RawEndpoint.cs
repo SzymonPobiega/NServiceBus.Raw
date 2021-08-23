@@ -2,6 +2,8 @@ using System.Threading.Tasks;
 
 namespace NServiceBus.Raw
 {
+    using System.Threading;
+
     /// <summary>
     /// Provides factory methods for creating and starting endpoint instances.
     /// </summary>
@@ -22,10 +24,11 @@ namespace NServiceBus.Raw
         /// Creates and starts a new endpoint based on the provided configuration.
         /// </summary>
         /// <param name="configuration">Configuration.</param>
-        public static async Task<IReceivingRawEndpoint> Start(RawEndpointConfiguration configuration)
+        /// <param name="cancellationToken">Cancellation token</param>
+        public static async Task<IReceivingRawEndpoint> Start(RawEndpointConfiguration configuration, CancellationToken cancellationToken)
         {
             var initializable = await Create(configuration).ConfigureAwait(false);
-            return await initializable.Start().ConfigureAwait(false);
+            return await initializable.Start(cancellationToken).ConfigureAwait(false);
         }
     }
 }

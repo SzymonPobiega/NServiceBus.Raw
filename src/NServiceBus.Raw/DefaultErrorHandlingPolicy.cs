@@ -13,8 +13,8 @@ namespace NServiceBus.Raw
             this.errorQueue = errorQueue;
             this.immediateRetryCount = immediateRetryCount;
         }
-        
-        public Task<ErrorHandleResult> OnError(IErrorHandlingPolicyContext handlingContext, IDispatchMessages dispatcher)
+
+        public Task<ErrorHandleResult> OnError(IErrorHandlingPolicyContext handlingContext, IMessageDispatcher dispatcher)
         {
             if (handlingContext.Error.ImmediateProcessingFailures < immediateRetryCount)
             {
