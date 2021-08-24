@@ -13,6 +13,7 @@ namespace NServiceBus.Raw
         {
             this.pushRuntimeSettings = pushRuntimeSettings;
             this.receiver = pushMessages;
+            this.dispatcher = dispatcher;
             this.transportAddress = transportAddress;
             this.onMessage = onMessage;
             this.onError = (context, cancellationToken) => errorHandlingPolicy.OnError(context, cancellationToken);
@@ -20,7 +21,7 @@ namespace NServiceBus.Raw
 
         public Task Initialize(CancellationToken cancellationToken)
         {
-            return receiver.Initialize(pushRuntimeSettings, onMessage, onError, cancellationToken);
+            return receiver.Initialize(pushRuntimeSettings, (context, token) => onMessage(context, dispatcher, token), onError, cancellationToken);
         }
 
         public void Start(CancellationToken cancellationToken)
@@ -55,6 +56,7 @@ namespace NServiceBus.Raw
         bool isStarted;
         PushRuntimeSettings pushRuntimeSettings;
         readonly IMessageReceiver receiver;
+        readonly IMessageDispatcher dispatcher;
         readonly string transportAddress;
         readonly OnMessage onMessage;
         readonly OnError onError;

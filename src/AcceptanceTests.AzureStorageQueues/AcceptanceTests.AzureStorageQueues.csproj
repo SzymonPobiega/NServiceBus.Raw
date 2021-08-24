@@ -3,8 +3,8 @@
     <TargetFramework>net472</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="8.0.0-alpha.1893" />
-    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="8.0.0-alpha.1893" />
+    <PackageReference Include="NServiceBus" Version="8.0.0-alpha.1896" />
+    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="8.0.0-alpha.1896" />
     <PackageReference Include="NServiceBus.Azure.Transports.WindowsAzureStorageQueues" Version="9.0.0-beta.1" />
     <PackageReference Include="NServiceBus.Newtonsoft.Json" Version="3.0.0-alpha.153" />
     <PackageReference Include="NUnit" Version="3.12.0" />

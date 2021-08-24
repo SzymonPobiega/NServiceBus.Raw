@@ -20,11 +20,32 @@ namespace NServiceBus.Raw
         }
 
         /// <summary>
+        /// Creates a new startable endpoint based on the provided configuration.
+        /// </summary>
+        /// <param name="configuration">Configuration.</param>
+        public static Task<IStartableRawEndpoint> Create(SendOnlyRawEndpointConfiguration configuration)
+        {
+            Guard.AgainstNull(nameof(configuration), configuration);
+            return configuration.Initialize();
+        }
+
+        /// <summary>
         /// Creates and starts a new endpoint based on the provided configuration.
         /// </summary>
         /// <param name="configuration">Configuration.</param>
         /// <param name="cancellationToken">Cancellation token</param>
         public static async Task<IReceivingRawEndpoint> Start(RawEndpointConfiguration configuration, CancellationToken cancellationToken)
+        {
+            var initializable = await Create(configuration).ConfigureAwait(false);
+            return await initializable.Start(cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Creates and starts a new endpoint based on the provided configuration.
+        /// </summary>
+        /// <param name="configuration">Configuration.</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        public static async Task<IReceivingRawEndpoint> Start(SendOnlyRawEndpointConfiguration configuration, CancellationToken cancellationToken)
         {
             var initializable = await Create(configuration).ConfigureAwait(false);
             return await initializable.Start(cancellationToken).ConfigureAwait(false);

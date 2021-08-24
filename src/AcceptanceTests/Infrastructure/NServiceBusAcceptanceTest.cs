@@ -6,10 +6,9 @@ namespace NServiceBus.AcceptanceTests
     using NUnit.Framework;
     using Transport;
 
-    public abstract class NServiceBusAcceptanceTest<TTransport>
-        where TTransport : TransportDefinition, new()
+    public abstract class NServiceBusAcceptanceTest
     {
-        protected abstract void SetupTransport(TransportExtensions<TTransport> extensions);
+        protected abstract TransportDefinition SetupTransport();
 
         [SetUp]
         public void SetUp()

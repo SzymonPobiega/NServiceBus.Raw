@@ -11,6 +11,14 @@ namespace NServiceBus.Raw
     using Unicast.Messages;
 
     /// <summary>
+    /// Callback for processing raw messages.
+    /// </summary>
+    public delegate Task OnMessage(
+        MessageContext messageContext,
+        IMessageDispatcher dispatcher,
+        CancellationToken cancellationToken = default(CancellationToken));
+
+    /// <summary>
     /// Configuration used to create a raw endpoint instance.
     /// </summary>
     public class RawEndpointConfiguration
@@ -21,7 +29,7 @@ namespace NServiceBus.Raw
         readonly OnMessage onMessage;
         readonly string errorQueue;
         IErrorHandlingPolicy errorHandlingPolicy;
-        int concurrencyLimit;
+        PushRuntimeSettings concurrencyLimit = new PushRuntimeSettings();
         Action<string, Exception, CancellationToken> criticalErrorAction = (s, exception, arg3) => { };
 
         /// <summary>
@@ -116,12 +124,12 @@ namespace NServiceBus.Raw
         /// <summary>
         /// Instructs the transport to limits the allowed concurrency when processing messages.
         /// </summary>
-        public int ConcurrencyLimit
+        public PushRuntimeSettings ConcurrencyLimit
         {
             get => concurrencyLimit;
             set
             {
-                Guard.AgainstNegativeAndZero(nameof(value), value);
+                Guard.AgainstNull(nameof(value), value);
                 concurrencyLimit = value;
             }
         }
@@ -150,7 +158,7 @@ namespace NServiceBus.Raw
 
             var pump = transportInfrastructure.Receivers[receiveSettings.Id];
 
-            var receiver = new RawTransportReceiver(pump, transportInfrastructure.Dispatcher, onMessage, queueName, new PushRuntimeSettings(concurrencyLimit),
+            var receiver = new RawTransportReceiver(pump, transportInfrastructure.Dispatcher, onMessage, queueName, concurrencyLimit,
                 new RawEndpointErrorHandlingPolicy(errorQueue, endpointName, queueName, transportInfrastructure.Dispatcher, errorHandlingPolicy));
 
             var startableEndpoint = new StartableRawEndpoint(transportDefinition, transportInfrastructure, receiver, endpointName, queueName);

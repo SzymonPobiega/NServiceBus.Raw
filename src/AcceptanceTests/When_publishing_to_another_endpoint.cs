@@ -6,11 +6,10 @@ using NServiceBus;
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.Extensibility;
-using NServiceBus.Transport;
+using NServiceBus.Unicast.Messages;
 using NUnit.Framework;
 
-public abstract class When_publishing_to_another_endpoint<TTransport> : NServiceBusAcceptanceTest<TTransport>
-    where TTransport : TransportDefinition, new()
+public abstract class When_publishing_to_another_endpoint : NServiceBusAcceptanceTest
 {
     [Test]
     public async Task It_receives_the_message()
@@ -24,10 +23,10 @@ public abstract class When_publishing_to_another_endpoint<TTransport> : NService
         var body = Encoding.UTF8.GetBytes("Hello world!");
 
         var result = await Scenario.Define<Context>()
-            .WithRawEndpoint<TTransport, Context>(SetupTransport, "Publisher",
+            .WithRawEndpoint(SetupTransport(), "Publisher",
                 onMessage: (context, scenario, dispatcher) => Task.FromResult(0),
                 onStarted: (endpoint, scenario) => endpoint.Publish(typeof(MyEvent), headers, body))
-            .WithRawEndpoint<TTransport, Context>(SetupTransport, "Subscriber",
+            .WithRawEndpoint(SetupTransport(), "Subscriber",
                 onMessage:(context, scenario, dispatcher) =>
                 {
                     if (context.Headers.TryGetValue("Secret", out var receivedSecret) && receivedSecret == secret.ToString())
@@ -39,7 +38,8 @@ public abstract class When_publishing_to_another_endpoint<TTransport> : NService
                 },
                 onStarting: (endpoint, context) =>
                 {
-                    return endpoint.SubscriptionManager.Subscribe(typeof(MyEvent), new ContextBag());
+                    var metadata = new MessageMetadata(typeof(MyEvent));
+                    return endpoint.SubscriptionManager.SubscribeAll(new[]{ metadata }, new ContextBag());
                 })
             .Done(c => c.MessageReceived)
             .Run();
