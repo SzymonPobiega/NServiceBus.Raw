@@ -32,14 +32,27 @@ namespace NServiceBus.Raw
             }
 
             var runningInstance = new RunningRawEndpointInstance(settings, receiver, transportInfrastructure, dispatcher, SubscriptionManager, localAddress);
+
             // set the started endpoint on CriticalError to pass the endpoint to the critical error action
             criticalError.SetEndpoint(runningInstance);
 
-            if (receiver != null)
+            try
             {
-                StartReceiver(receiver);
+                // set the started endpoint on CriticalError to pass the endpoint to the critical error action
+                criticalError.SetEndpoint(runningInstance);
+
+                if (receiver != null)
+                {
+                    StartReceiver(receiver);
+                }
+
+                return runningInstance;
             }
-            return runningInstance;
+            catch
+            {
+                await runningInstance.Stop();
+                throw;
+            }
         }
 
         public IManageSubscriptions SubscriptionManager { get; }
@@ -93,7 +106,7 @@ namespace NServiceBus.Raw
 
             var purgeOnStartup = settings.GetOrDefault<bool>("Transport.PurgeOnStartup");
             var poisonMessageQueue = settings.Get<string>("NServiceBus.Raw.PoisonMessageQueue");
-            
+
 
 
             var receiver = BuildMainReceiver(poisonMessageQueue, purgeOnStartup, GetTransportTransactionMode());
