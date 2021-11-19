@@ -38,9 +38,6 @@ namespace NServiceBus.Raw
 
             try
             {
-                // set the started endpoint on CriticalError to pass the endpoint to the critical error action
-                criticalError.SetEndpoint(runningInstance);
-
                 if (receiver != null)
                 {
                     StartReceiver(receiver);
@@ -51,6 +48,7 @@ namespace NServiceBus.Raw
             catch
             {
                 await runningInstance.Stop();
+               
                 throw;
             }
         }
