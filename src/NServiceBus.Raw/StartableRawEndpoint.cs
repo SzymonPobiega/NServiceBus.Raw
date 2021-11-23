@@ -24,6 +24,13 @@ namespace NServiceBus.Raw
 
         public async Task<IReceivingRawEndpoint> Start()
         {
+            if(startHasBeenCalled)
+            {
+                throw new InvalidOperationException("Multiple calls to Start is not supported.");
+            }
+
+            startHasBeenCalled = true;
+
             var receiver = CreateReceiver();
 
             if (receiver != null)
@@ -105,8 +112,6 @@ namespace NServiceBus.Raw
             var purgeOnStartup = settings.GetOrDefault<bool>("Transport.PurgeOnStartup");
             var poisonMessageQueue = settings.Get<string>("NServiceBus.Raw.PoisonMessageQueue");
 
-
-
             var receiver = BuildMainReceiver(poisonMessageQueue, purgeOnStartup, GetTransportTransactionMode());
 
             return receiver;
@@ -157,7 +162,7 @@ namespace NServiceBus.Raw
         IDispatchMessages dispatcher;
         Func<MessageContext, IDispatchMessages, Task> onMessage;
         string localAddress;
-
+        bool startHasBeenCalled;
         static ILog Logger = LogManager.GetLogger<StartableRawEndpoint>();
     }
 }
