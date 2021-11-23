@@ -24,6 +24,13 @@ namespace NServiceBus.Raw
 
         public async Task<IReceivingRawEndpoint> Start()
         {
+            if(startHasBeenCalled)
+            {
+                throw new InvalidOperationException("Multiple calls to Start is not supported.");
+            }
+
+            startHasBeenCalled = true;
+
             var receiver = CreateReceiver();
 
             if (receiver != null)
@@ -32,14 +39,25 @@ namespace NServiceBus.Raw
             }
 
             var runningInstance = new RunningRawEndpointInstance(settings, receiver, transportInfrastructure, dispatcher, SubscriptionManager, localAddress);
+
             // set the started endpoint on CriticalError to pass the endpoint to the critical error action
             criticalError.SetEndpoint(runningInstance);
 
-            if (receiver != null)
+            try
             {
-                StartReceiver(receiver);
+                if (receiver != null)
+                {
+                    StartReceiver(receiver);
+                }
+
+                return runningInstance;
             }
-            return runningInstance;
+            catch
+            {
+                await runningInstance.Stop();
+               
+                throw;
+            }
         }
 
         public IManageSubscriptions SubscriptionManager { get; }
@@ -93,8 +111,6 @@ namespace NServiceBus.Raw
 
             var purgeOnStartup = settings.GetOrDefault<bool>("Transport.PurgeOnStartup");
             var poisonMessageQueue = settings.Get<string>("NServiceBus.Raw.PoisonMessageQueue");
-            
-
 
             var receiver = BuildMainReceiver(poisonMessageQueue, purgeOnStartup, GetTransportTransactionMode());
 
@@ -146,7 +162,7 @@ namespace NServiceBus.Raw
         IDispatchMessages dispatcher;
         Func<MessageContext, IDispatchMessages, Task> onMessage;
         string localAddress;
-
+        bool startHasBeenCalled;
         static ILog Logger = LogManager.GetLogger<StartableRawEndpoint>();
     }
 }

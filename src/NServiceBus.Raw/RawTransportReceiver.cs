@@ -30,11 +30,20 @@ namespace NServiceBus.Raw
                 throw new InvalidOperationException("The transport is already started");
             }
 
-            Logger.DebugFormat("Receiver is starting, listening to queue {0}.", pushSettings.InputQueue);
+            try
+            {
+                Logger.DebugFormat("Receiver is starting, listening to queue {0}.", pushSettings.InputQueue);
 
-            receiver.Start(pushRuntimeSettings);
+                receiver.Start(pushRuntimeSettings);
 
-            isStarted = true;
+                isStarted = true;
+            }
+            catch
+            {
+                isStarted = false;
+                receiver.Stop();
+                throw;
+            }
         }
 
         public async Task Stop()
