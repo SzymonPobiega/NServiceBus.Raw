@@ -89,11 +89,25 @@ namespace NServiceBus.Raw
             settings.SetDefault("MainSerializer", serializer);
 
             //SQS and ASQ
-            bool isMessageType(Type t) => true;
-            var ctor = typeof(MessageMetadataRegistry).GetConstructor(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(Func<Type, bool>) }, null);
+            bool isMessageType(Type t) => true;            
+            var registry = CreateMessageMetadataRegistry();
 #pragma warning disable CS0618 // Type or member is obsolete
-            settings.SetDefault<MessageMetadataRegistry>(ctor.Invoke(new object[] { (Func<Type, bool>)isMessageType }));
+            settings.SetDefault(registry);
 #pragma warning restore CS0618 // Type or member is obsolete
+        }
+
+        static MessageMetadataRegistry CreateMessageMetadataRegistry()
+        {
+            // Ctor for NServiceBus <= 7.6
+            var ctor = typeof(MessageMetadataRegistry).GetConstructor(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(Func<Type, bool>) }, null);
+            if (ctor != null)
+            {
+                return (MessageMetadataRegistry)ctor.Invoke(new object[] { (Func<Type, bool>)isMessageType });
+            }
+
+            // Ctor for NServiceBus 7.7, adds `bool allowDynamicTypeLoading`, default to true to keep same behavior
+            ctor = typeof(MessageMetadataRegistry).GetConstructor(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(Func<Type, bool>), bool }, null);
+            return (MessageMetadataRegistry)ctor.Invoke(new object[] { (Func<Type, bool>)isMessageType, true });
         }
 
         /// <summary>
