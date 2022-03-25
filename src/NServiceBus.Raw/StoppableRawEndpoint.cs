@@ -1,8 +1,8 @@
 namespace NServiceBus.Raw
 {
-    using System.Threading.Tasks;
     using Logging;
     using Settings;
+    using System.Threading.Tasks;
     using Transport;
 
     class StoppableRawEndpoint : IStoppableRawEndpoint
@@ -22,7 +22,7 @@ namespace NServiceBus.Raw
 
             try
             {
-                await transportInfrastructure.Stop().ConfigureAwait(false);
+                await transportInfrastructure.Shutdown().ConfigureAwait(false);
             }
             catch (TaskCanceledException)
             {

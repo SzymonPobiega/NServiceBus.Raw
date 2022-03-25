@@ -1,11 +1,12 @@
 ﻿using NServiceBus;
+using NServiceBus.Transport;
 using NUnit.Framework;
 
 [TestFixture]
 public class When_sending_from_send_only_endpoint_Learning : When_sending_from_send_only_endpoint<LearningTransport>
 {
-    protected override void SetupTransport(TransportExtensions<LearningTransport> extensions)
+    protected override TransportDefinition SetupTransport()
     {
-        extensions.ConfigureLearning();
+        return Helper.ConfigureLearning();
     }
 }

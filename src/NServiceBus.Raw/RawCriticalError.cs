@@ -1,13 +1,14 @@
+using NServiceBus.Logging;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
-using NServiceBus.Logging;
 
 namespace NServiceBus.Raw
 {
     class RawCriticalError : CriticalError
     {
-        public RawCriticalError(Func<ICriticalErrorContext, Task> onCriticalErrorAction)
+        public RawCriticalError(Func<ICriticalErrorContext, CancellationToken, Task> onCriticalErrorAction)
             : base(onCriticalErrorAction)
         {
             if (onCriticalErrorAction == null)
@@ -20,12 +21,12 @@ namespace NServiceBus.Raw
             }
         }
 
-        static Task DefaultCriticalErrorHandling(ICriticalErrorContext criticalErrorContext)
+        static Task DefaultCriticalErrorHandling(ICriticalErrorContext criticalErrorContext, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return criticalErrorContext.Stop();
+            return criticalErrorContext.Stop(CancellationToken.None);
         }
 
-        public override void Raise(string errorMessage, Exception exception)
+        public override void Raise(string errorMessage, Exception exception, CancellationToken cancellationToken = default(CancellationToken))
         {
             //Intentionally don't call base.Raise
             Guard.AgainstNullAndEmpty(nameof(errorMessage), errorMessage);
@@ -53,12 +54,12 @@ namespace NServiceBus.Raw
         {
             Task.Run(() =>
             {
-                var context = new CriticalErrorContext(async () =>
+                var context = new CriticalErrorContext(async (_) =>
                 {
                     var stoppable = await endpoint.StopReceiving().ConfigureAwait(false);
                     await stoppable.Stop().ConfigureAwait(false);
                 }, errorMessage, exception);
-                return criticalErrorAction(context);
+                return criticalErrorAction(context, CancellationToken.None);
             });
         }
 
@@ -75,7 +76,7 @@ namespace NServiceBus.Raw
             }
         }
 
-        Func<CriticalErrorContext, Task> criticalErrorAction;
+        Func<CriticalErrorContext, CancellationToken, Task> criticalErrorAction;
 
         List<LatentCritical> criticalErrors = new List<LatentCritical>();
         IReceivingRawEndpoint endpoint;

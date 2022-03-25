@@ -1,19 +1,17 @@
 ﻿namespace NServiceBus.Raw.DelayedRetries
 {
+    using Routing;
     using System;
     using System.Threading.Tasks;
-    using Routing;
     using Transport;
 
     /// <summary>
     /// An endpoint that can delay retry messages.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class DelayedRetryEndpoint<T>
-        where T : TransportDefinition, new()
+    public class DelayedRetryEndpoint
     {
         string storageQueueName;
-        Action<TransportExtensions<T>> transportCustomization;
+        TransportDefinition transportDefinition;
         string poisonMessageQueue;
         IReceivingRawEndpoint outEndpoint;
 
@@ -22,11 +20,11 @@
         /// </summary>
         /// <param name="storageQueueName">Address of a queue to be used to store delayed retry messages.</param>
         /// <param name="poisonMessageQueue">Address of a poison message queue.</param>
-        /// <param name="transportCustomization">A callback for customizing the transport.</param>
-        public DelayedRetryEndpoint(string storageQueueName, string poisonMessageQueue = null, Action<TransportExtensions<T>> transportCustomization = null)
+        /// <param name="transportDefinition">The transport configuration.</param>
+        public DelayedRetryEndpoint(TransportDefinition transportDefinition, string storageQueueName, string poisonMessageQueue = null)
         {
             this.storageQueueName = storageQueueName;
-            this.transportCustomization = transportCustomization ?? EmptyTransportCustomization;
+            this.transportDefinition = transportDefinition;
             this.poisonMessageQueue = poisonMessageQueue ?? "poison";
         }
 
@@ -35,20 +33,16 @@
         /// </summary>
         public async Task Start()
         {
-            var outConfig = RawEndpointConfiguration.Create(storageQueueName, OnOutgoingMessage, poisonMessageQueue);
+            var outConfig = RawEndpointConfiguration.Create(storageQueueName, transportDefinition, OnOutgoingMessage, poisonMessageQueue);
+
             outConfig.LimitMessageProcessingConcurrencyTo(1);
-            transportCustomization(outConfig.UseTransport<T>());
             outConfig.CustomErrorHandlingPolicy(new RetryForeverPolicy());
             outConfig.AutoCreateQueue();
 
             outEndpoint = await RawEndpoint.Start(outConfig).ConfigureAwait(false);
         }
 
-        static void EmptyTransportCustomization(TransportExtensions<T> transport)
-        {
-        }
-
-        static async Task OnOutgoingMessage(MessageContext delayedMessage, IDispatchMessages dispatcher)
+        static async Task OnOutgoingMessage(MessageContext delayedMessage, IMessageDispatcher dispatcher)
         {
             string dueHeader;
             string destination;
@@ -77,9 +71,9 @@
             headers.Remove("NServiceBus.Raw.DelayedRetries.RetryTo");
             headers["NServiceBus.Raw.DelayedRetries.Attempt"] = attempt.ToString();
 
-            var message = new OutgoingMessage(delayedMessage.MessageId, headers, delayedMessage.Body);
+            var message = new OutgoingMessage(delayedMessage.NativeMessageId, headers, delayedMessage.Body);
             var operation = new TransportOperation(message, new UnicastAddressTag(destination));
-            await dispatcher.Dispatch(new TransportOperations(operation), delayedMessage.TransportTransaction, delayedMessage.Extensions).ConfigureAwait(false);
+            await dispatcher.Dispatch(new TransportOperations(operation), delayedMessage.TransportTransaction).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -93,7 +87,7 @@
 
         class RetryForeverPolicy : IErrorHandlingPolicy
         {
-            public Task<ErrorHandleResult> OnError(IErrorHandlingPolicyContext handlingContext, IDispatchMessages dispatcher)
+            public Task<ErrorHandleResult> OnError(IErrorHandlingPolicyContext handlingContext, IMessageDispatcher dispatcher)
             {
                 return Task.FromResult(ErrorHandleResult.RetryRequired);
             }

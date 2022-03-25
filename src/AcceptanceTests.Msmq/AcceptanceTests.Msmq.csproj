@@ -3,8 +3,8 @@
     <TargetFramework>net452</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="7.4.0" />
-    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="7.4.0" />
+    <PackageReference Include="NServiceBus" Version="8.0.0-beta.1" />
+    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="8.0.0-beta.1" />
     <PackageReference Include="NServiceBus.Transport.Msmq" Version="1.0.0" />
     <PackageReference Include="NUnit" Version="3.12.0" />
     <ProjectReference Include="..\NServiceBus.Raw\NServiceBus.Raw.csproj" />

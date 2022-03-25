@@ -1,29 +1,33 @@
-using System;
-using System.Threading.Tasks;
 using NServiceBus.Logging;
 using NServiceBus.Transport;
+using System;
+using System.Threading.Tasks;
 
 namespace NServiceBus.Raw
 {
     class RawTransportReceiver
     {
-        public RawTransportReceiver(IPushMessages pushMessages, IDispatchMessages dispatcher, Func<MessageContext, IDispatchMessages, Task> onMessage, PushSettings pushSettings, PushRuntimeSettings pushRuntimeSettings, CriticalError criticalError, RawEndpointErrorHandlingPolicy errorHandlingPolicy)
+        public RawTransportReceiver(
+            IMessageReceiver pushMessages,
+            IMessageDispatcher dispatcher,
+            Func<MessageContext, IMessageDispatcher, Task> onMessage,
+            PushRuntimeSettings pushRuntimeSettings,
+            RawEndpointErrorHandlingPolicy errorHandlingPolicy)
         {
-            this.criticalError = criticalError;
             this.errorHandlingPolicy = errorHandlingPolicy;
             this.pushRuntimeSettings = pushRuntimeSettings;
-            this.pushSettings = pushSettings;
-
-            receiver = pushMessages;
-            this.onMessage = context => onMessage(context, dispatcher);
+            Receiver = pushMessages;
+            this.onMessage = ctx => onMessage(ctx, dispatcher);
         }
+
+        public IMessageReceiver Receiver;
 
         public Task Init()
         {
-            return receiver.Init(ctx => onMessage(ctx), ctx => errorHandlingPolicy.OnError(ctx), criticalError, pushSettings);
+            return Receiver.Initialize(pushRuntimeSettings, (ctx, _) => onMessage(ctx), (ctx, _) => errorHandlingPolicy.OnError(ctx));
         }
 
-        public void Start()
+        public async void Start()
         {
             if (isStarted)
             {
@@ -32,16 +36,16 @@ namespace NServiceBus.Raw
 
             try
             {
-                Logger.DebugFormat("Receiver is starting, listening to queue {0}.", pushSettings.InputQueue);
+                Logger.DebugFormat("Receiver is starting, listening to queue {0}.", Receiver.ReceiveAddress);
 
-                receiver.Start(pushRuntimeSettings);
+                await Receiver.StartReceive();
 
                 isStarted = true;
             }
             catch
             {
                 isStarted = false;
-                receiver.Stop();
+                await Receiver.StopReceive();
                 throw;
             }
         }
@@ -53,22 +57,18 @@ namespace NServiceBus.Raw
                 return;
             }
 
-            await receiver.Stop().ConfigureAwait(false);
-            if (receiver is IDisposable disposable)
+            await Receiver.StopReceive().ConfigureAwait(false);
+            if (Receiver is IDisposable disposable)
             {
                 disposable.Dispose();
             }
             isStarted = false;
         }
 
-        CriticalError criticalError;
         RawEndpointErrorHandlingPolicy errorHandlingPolicy;
         bool isStarted;
         PushRuntimeSettings pushRuntimeSettings;
-        PushSettings pushSettings;
-        IPushMessages receiver;
-        Func<MessageContext, Task> onMessage;
-
+        private readonly Func<MessageContext, Task> onMessage;
         static ILog Logger = LogManager.GetLogger<RawTransportReceiver>();
     }
 }

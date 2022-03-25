@@ -1,105 +1,52 @@
-using System;
-using System.Reflection;
-using System.Threading.Tasks;
-using System.Transactions;
-using NServiceBus.Settings;
-using NServiceBus.Transport;
-
 namespace NServiceBus.Raw
 {
-    using Serialization;
-    using Unicast.Messages;
+    using NServiceBus.Settings;
+    using NServiceBus.Transport;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Configuration used to create a raw endpoint instance.
     /// </summary>
     public class RawEndpointConfiguration
     {
-        Func<MessageContext, IDispatchMessages, Task> onMessage;
-        QueueBindings queueBindings;
-
         /// <summary>
         /// Creates a send-only raw endpoint config.
         /// </summary>
-        /// <param name="endpointName">The name of the endpoint being configured.</param>
-        /// <returns></returns>
-        public static RawEndpointConfiguration CreateSendOnly(string endpointName)
+        public static RawEndpointConfiguration CreateSendOnly(string endpointName, TransportDefinition transportDefinition)
         {
-            return new RawEndpointConfiguration(endpointName, null, null);
+            return new RawEndpointConfiguration(endpointName, transportDefinition, null, null);
         }
 
         /// <summary>
         /// Creates a regular raw endpoint config.
         /// </summary>
-        /// <param name="endpointName">The name of the endpoint being configured.</param>
-        /// <param name="onMessage">Callback invoked when a message is received.</param>
-        /// <param name="poisonMessageQueue">Queue to move poison messages that can't be received from transport.</param>
-        /// <returns></returns>
-        public static RawEndpointConfiguration Create(string endpointName, Func<MessageContext, IDispatchMessages, Task> onMessage, string poisonMessageQueue)
+        public static RawEndpointConfiguration Create(
+            string endpointName,
+            TransportDefinition transportDefinition,
+            Func<MessageContext,
+            IMessageDispatcher, Task> onMessage,
+            string poisonMessageQueue)
         {
-            return new RawEndpointConfiguration(endpointName, onMessage, poisonMessageQueue);
+            return new RawEndpointConfiguration(endpointName, transportDefinition, onMessage, poisonMessageQueue);
         }
 
-        RawEndpointConfiguration(string endpointName, Func<MessageContext, IDispatchMessages, Task> onMessage, string poisonMessageQueue)
+        RawEndpointConfiguration(
+            string endpointName,
+            TransportDefinition transportDefinition,
+            Func<MessageContext, IMessageDispatcher, Task> onMessage,
+            string poisonMessageQueue)
         {
-            this.onMessage = onMessage;
             ValidateEndpointName(endpointName);
 
-            var sendOnly = onMessage == null;
-            Settings.Set("Endpoint.SendOnly", sendOnly);
-            Settings.Set("TypesToScan", new Type[0]);
-            Settings.Set("NServiceBus.Routing.EndpointName", endpointName);
-
-            Settings.SetDefault("Transactions.IsolationLevel", IsolationLevel.ReadCommitted);
-            Settings.SetDefault("Transactions.DefaultTimeout", TransactionManager.DefaultTimeout);
-
-            Settings.PrepareConnectionString();
-            queueBindings = Settings.Get<QueueBindings>();
-
-            if (!sendOnly)
-            {
-                queueBindings.BindSending(poisonMessageQueue);
-                Settings.Set("NServiceBus.Raw.PoisonMessageQueue", poisonMessageQueue);
-                Settings.SetDefault<IErrorHandlingPolicy>(new DefaultErrorHandlingPolicy(poisonMessageQueue, 5));
-            }
-
-            SetTransportSpecificFlags(Settings, poisonMessageQueue);
+            this.endpointName = endpointName;
+            this.transportDefinition = transportDefinition;
+            this.onMessage = onMessage;
+            this.poisonMessageQueue = poisonMessageQueue;
+            errorHandlingPolicy = new DefaultErrorHandlingPolicy(poisonMessageQueue, 3);
+            SendOnly = onMessage == null;
+            pushRuntimeSettings = PushRuntimeSettings.Default;
         }
-
-        static void SetTransportSpecificFlags(SettingsHolder settings, string poisonQueue)
-        {
-            //To satisfy requirements of various transports
-
-            //MSMQ
-            settings.Set("errorQueue", poisonQueue); //Not SetDefault Because MSMQ transport verifies if that value has been explicitly set
-
-            //RabbitMQ
-            settings.SetDefault("RabbitMQ.RoutingTopologySupportsDelayedDelivery", true);
-
-            //SQS
-            settings.SetDefault("NServiceBus.AmazonSQS.DisableSubscribeBatchingOnStart", true);
-
-            //ASB
-            var builder = new ConventionsBuilder(settings);
-            builder.DefiningEventsAs(type => true);
-            settings.Set(builder.Conventions);
-
-            //ASQ and ASB
-            var serializer = Tuple.Create(new NewtonsoftSerializer() as SerializationDefinition, new SettingsHolder());
-            settings.SetDefault("MainSerializer", serializer);
-
-            //SQS and ASQ
-            bool isMessageType(Type t) => true;
-            var ctor = typeof(MessageMetadataRegistry).GetConstructor(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(Func<Type, bool>) }, null);
-#pragma warning disable CS0618 // Type or member is obsolete
-            settings.SetDefault<MessageMetadataRegistry>(ctor.Invoke(new object[] { (Func<Type, bool>)isMessageType }));
-#pragma warning restore CS0618 // Type or member is obsolete
-        }
-
-        /// <summary>
-        /// Exposes raw settings object.
-        /// </summary>
-        public SettingsHolder Settings { get; } = new SettingsHolder();
 
         /// <summary>
         /// Instructs the endpoint to use a custom error handling policy.
@@ -107,7 +54,7 @@ namespace NServiceBus.Raw
         public void CustomErrorHandlingPolicy(IErrorHandlingPolicy customPolicy)
         {
             Guard.AgainstNull(nameof(customPolicy), customPolicy);
-            Settings.Set(customPolicy);
+            errorHandlingPolicy = customPolicy;
         }
 
         /// <summary>
@@ -117,7 +64,9 @@ namespace NServiceBus.Raw
         {
             Guard.AgainstNegative(nameof(immediateRetryCount), immediateRetryCount);
             Guard.AgainstNullAndEmpty(nameof(errorQueue), errorQueue);
-            Settings.Set<IErrorHandlingPolicy>(new DefaultErrorHandlingPolicy(errorQueue, immediateRetryCount));
+
+            poisonMessageQueue = errorQueue;
+            errorHandlingPolicy = new DefaultErrorHandlingPolicy(errorQueue, immediateRetryCount);
         }
 
         /// <summary>
@@ -152,56 +101,12 @@ namespace NServiceBus.Raw
         {
             Guard.AgainstNegativeAndZero(nameof(maxConcurrency), maxConcurrency);
 
-            Settings.Set("MaxConcurrency", maxConcurrency);
-        }
-
-        /// <summary>
-        /// Configures NServiceBus to use the given transport.
-        /// </summary>
-        public TransportExtensions<T> UseTransport<T>() where T : TransportDefinition, new()
-        {
-            var type = typeof(TransportExtensions<>).MakeGenericType(typeof(T));
-            var transportDefinition = new T();
-            var extension = (TransportExtensions<T>)Activator.CreateInstance(type, Settings);
-
-            ConfigureTransport(transportDefinition);
-            return extension;
-        }
-
-        /// <summary>
-        /// Configures NServiceBus to use the given transport.
-        /// </summary>
-        public TransportExtensions UseTransport(Type transportDefinitionType)
-        {
-            Guard.AgainstNull(nameof(transportDefinitionType), transportDefinitionType);
-            Guard.TypeHasDefaultConstructor(transportDefinitionType, nameof(transportDefinitionType));
-
-            var transportDefinition = Construct<TransportDefinition>(transportDefinitionType);
-            ConfigureTransport(transportDefinition);
-            return new TransportExtensions(Settings);
-        }
-
-        void ConfigureTransport(TransportDefinition transportDefinition)
-        {
-            Settings.Set(transportDefinition);
-        }
-
-        static T Construct<T>(Type type)
-        {
-            var defaultConstructor = type.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[]
-            {
-            }, null);
-            if (defaultConstructor != null)
-            {
-                return (T)defaultConstructor.Invoke(null);
-            }
-
-            return (T)Activator.CreateInstance(type);
+            pushRuntimeSettings = new PushRuntimeSettings(maxConcurrency);
         }
 
         internal InitializableRawEndpoint Build()
         {
-            return new InitializableRawEndpoint(Settings, onMessage);
+            return new InitializableRawEndpoint(Settings, this);
         }
 
         static void ValidateEndpointName(string endpointName)
@@ -216,5 +121,20 @@ namespace NServiceBus.Raw
                 throw new ArgumentException("Endpoint name must not contain an '@' character.", nameof(endpointName));
             }
         }
+
+
+        /// <summary>
+        /// Exposes raw settings object.
+        /// </summary>
+        public SettingsHolder Settings { get; } = new SettingsHolder();
+        internal bool SendOnly { get; }
+
+        internal IErrorHandlingPolicy errorHandlingPolicy;
+        internal Func<MessageContext, IMessageDispatcher, Task> onMessage;
+        internal string poisonMessageQueue;
+        QueueBindings queueBindings = new QueueBindings();
+        internal string endpointName;
+        internal TransportDefinition transportDefinition;
+        internal PushRuntimeSettings pushRuntimeSettings;
     }
 }

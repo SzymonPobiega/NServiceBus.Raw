@@ -1,15 +1,15 @@
 namespace NServiceBus.AcceptanceTests
 {
-    using System.Linq;
-    using System.Threading;
     using AcceptanceTesting.Customization;
     using NUnit.Framework;
+    using System.Linq;
+    using System.Threading;
     using Transport;
 
     public abstract class NServiceBusAcceptanceTest<TTransport>
         where TTransport : TransportDefinition, new()
     {
-        protected abstract void SetupTransport(TransportExtensions<TTransport> extensions);
+        protected abstract TransportDefinition SetupTransport();
 
         [SetUp]
         public void SetUp()

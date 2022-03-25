@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using NServiceBus.AcceptanceTesting;
+﻿using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.Raw.DelayedRetries;
 using NServiceBus.Transport;
 using NUnit.Framework;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
 
 public abstract class When_using_delayed_retries<TTransport> : NServiceBusAcceptanceTest<TTransport>
     where TTransport : TransportDefinition, new()
@@ -18,20 +18,20 @@ public abstract class When_using_delayed_retries<TTransport> : NServiceBusAccept
         var body = Encoding.UTF8.GetBytes("Hello world!");
 
         var result = await Scenario.Define<Context>()
-            .WithRawEndpoint<TTransport, Context>(SetupTransport, "Endpoint",
-                onMessage:(context, scenario, dispatcher) =>
-                {
-                    scenario.Attempts++;
-                    throw new Exception("Boom!");
-                },
+            .WithRawEndpoint<TTransport, Context>(SetupTransport(), "Endpoint",
+                onMessage: (context, scenario, dispatcher) =>
+                 {
+                     scenario.Attempts++;
+                     throw new Exception("Boom!");
+                 },
                 onStarted: (endpoint, scenario) => endpoint.Send("Endpoint", headers, body),
                 configure: config =>
                 {
                     config.LimitMessageProcessingConcurrencyTo(1);
                     config.CustomErrorHandlingPolicy(new DelayedRetryErrorHandlingPolicy(0, 5, "DelayedRetries", "FailureSpy", TimeSpan.FromMilliseconds(100)));
                 })
-            .WithDelayedRetryEndpointComponent<TTransport, Context>(SetupTransport, "DelayedRetries")
-            .WithRawEndpoint<TTransport, Context>(SetupTransport, "FailureSpy",
+            .WithDelayedRetryEndpointComponent<TTransport, Context>(SetupTransport(), "DelayedRetries")
+            .WithRawEndpoint<TTransport, Context>(SetupTransport(), "FailureSpy",
                 onMessage: (context, scenario, dispatcher) =>
                 {
                     scenario.MessageMovedToErrorQueue = true;

@@ -1,9 +1,8 @@
 namespace NServiceBus.Raw.DelayedRetries
 {
+    using Routing;
     using System;
     using System.Threading.Tasks;
-    using Extensibility;
-    using Routing;
     using Transport;
 
     /// <summary>
@@ -39,7 +38,7 @@ namespace NServiceBus.Raw.DelayedRetries
         /// </summary>
         /// <param name="handlingContext">Error handling context.</param>
         /// <param name="dispatcher">Dispatcher.</param>
-        public async Task<ErrorHandleResult> OnError(IErrorHandlingPolicyContext handlingContext, IDispatchMessages dispatcher)
+        public async Task<ErrorHandleResult> OnError(IErrorHandlingPolicyContext handlingContext, IMessageDispatcher dispatcher)
         {
             var message = handlingContext.Error.Message;
             if (handlingContext.Error.ImmediateProcessingFailures < immediateRetries)
@@ -61,7 +60,7 @@ namespace NServiceBus.Raw.DelayedRetries
             message.Headers["NServiceBus.Raw.DelayedRetries.RetryTo"] = handlingContext.FailedQueue;
             var delayedMessage = new OutgoingMessage(message.MessageId, message.Headers, message.Body);
             var operation = new TransportOperation(delayedMessage, new UnicastAddressTag(delayQueue));
-            await dispatcher.Dispatch(new TransportOperations(operation), handlingContext.Error.TransportTransaction, new ContextBag())
+            await dispatcher.Dispatch(new TransportOperations(operation), handlingContext.Error.TransportTransaction)
                 .ConfigureAwait(false);
             return ErrorHandleResult.Handled;
         }

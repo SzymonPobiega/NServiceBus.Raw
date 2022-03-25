@@ -1,19 +1,20 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using NServiceBus;
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Raw.DelayedRetries;
 using NServiceBus.Transport;
+using System.Threading;
+using System.Threading.Tasks;
 
 static class DelayedRetryEndpointComponentExtensions
 {
-    public static IScenarioWithEndpointBehavior<TContext> WithDelayedRetryEndpointComponent<TTransport, TContext>(this IScenarioWithEndpointBehavior<TContext> scenario, Action<TransportExtensions<TTransport>> customizeTransport, string name)
+    public static IScenarioWithEndpointBehavior<TContext> WithDelayedRetryEndpointComponent<TTransport, TContext>(
+        this IScenarioWithEndpointBehavior<TContext> scenario,
+        TransportDefinition transportDefinition,
+        string name)
         where TContext : ScenarioContext
         where TTransport : TransportDefinition, new()
     {
-        var component = new DelayedRetryEndpointComponent<TTransport, TContext>(name, customizeTransport);
+        var component = new DelayedRetryEndpointComponent<TTransport, TContext>(name, transportDefinition);
         return scenario.WithComponent(component);
     }
 }
@@ -23,26 +24,26 @@ class DelayedRetryEndpointComponent<TTransport, TContext> : IComponentBehavior
     where TTransport : TransportDefinition, new()
 {
     string name;
-    Action<TransportExtensions<TTransport>> customizeTransport;
+    TransportDefinition transportDefinition;
 
-    public DelayedRetryEndpointComponent(string name, Action<TransportExtensions<TTransport>> customizeTransport)
+    public DelayedRetryEndpointComponent(string name, TransportDefinition transportDefinition)
     {
         this.name = name;
-        this.customizeTransport = customizeTransport;
+        this.transportDefinition = transportDefinition;
     }
 
     public Task<ComponentRunner> CreateRunner(RunDescriptor run)
     {
-        var endpoint = new DelayedRetryEndpoint<TTransport>(name, null, customizeTransport);
-        
+        var endpoint = new DelayedRetryEndpoint(transportDefinition, name, null);
+
         return Task.FromResult<ComponentRunner>(new Runner(name, endpoint));
     }
 
     class Runner : ComponentRunner
     {
-        DelayedRetryEndpoint<TTransport> endpoint;
+        DelayedRetryEndpoint endpoint;
 
-        public Runner(string name, DelayedRetryEndpoint<TTransport> endpoint)
+        public Runner(string name, DelayedRetryEndpoint endpoint)
         {
             Name = name;
             this.endpoint = endpoint;

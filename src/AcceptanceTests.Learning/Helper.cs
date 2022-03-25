@@ -1,11 +1,11 @@
-using System;
-using System.IO;
 using NServiceBus;
 using NUnit.Framework;
+using System;
+using System.IO;
 
 public static class Helper
 {
-    public static void ConfigureLearning(this TransportExtensions<LearningTransport> extensions)
+    public static LearningTransport ConfigureLearning()
     {
         var testRunId = TestContext.CurrentContext.Test.ID;
 
@@ -27,6 +27,9 @@ public static class Helper
             Directory.Delete(storageDir, true);
         }
 
-        extensions.StorageDirectory(storageDir);
+        return new LearningTransport
+        {
+            StorageDirectory = storageDir
+        };
     }
 }

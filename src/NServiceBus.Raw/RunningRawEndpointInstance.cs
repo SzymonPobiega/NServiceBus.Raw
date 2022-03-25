@@ -1,29 +1,31 @@
-using System.Threading.Tasks;
-using NServiceBus.Extensibility;
 using NServiceBus.Logging;
 using NServiceBus.Settings;
 using NServiceBus.Transport;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace NServiceBus.Raw
 {
     class RunningRawEndpointInstance : IReceivingRawEndpoint
     {
-        public RunningRawEndpointInstance(SettingsHolder settings, RawTransportReceiver receiver, TransportInfrastructure transportInfrastructure, IDispatchMessages dispatcher, IManageSubscriptions subscriptionManager, string localAddress)
+        public RunningRawEndpointInstance(
+            string endpointName,
+            SettingsHolder settings,
+            RawTransportReceiver receiver,
+            TransportInfrastructure transportInfrastructure)
         {
-            this.settings = settings;
             this.receiver = receiver;
             this.transportInfrastructure = transportInfrastructure;
-            this.dispatcher = dispatcher;
-            this.TransportAddress = localAddress;
-            SubscriptionManager = subscriptionManager;
+            EndpointName = endpointName;
+            this.settings = settings;
         }
 
-        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, ContextBag context)
+        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, CancellationToken cancellation = default)
         {
-            return dispatcher.Dispatch(outgoingMessages, transaction, context);
+            return transportInfrastructure.Dispatcher.Dispatch(outgoingMessages, transaction);
         }
 
-        public string ToTransportAddress(LogicalAddress logicalAddress)
+        public string ToTransportAddress(QueueAddress logicalAddress)
         {
             return transportInfrastructure.ToTransportAddress(logicalAddress);
         }
@@ -39,10 +41,23 @@ namespace NServiceBus.Raw
             return new StoppableRawEndpoint(transportInfrastructure, settings);
         }
 
-        public string TransportAddress { get; }
-        public string EndpointName => settings.EndpointName();
-        public ReadOnlySettings Settings => settings;
-        public IManageSubscriptions SubscriptionManager { get; }
+        public string TransportAddress
+        {
+            get
+            {
+                return receiver.Receiver.ReceiveAddress;
+            }
+        }
+        public string EndpointName { get; }
+        public ISubscriptionManager SubscriptionManager
+        {
+            get
+            {
+                return receiver.Receiver.Subscriptions;
+            }
+        }
+
+        public IReadOnlySettings Settings => throw new System.NotImplementedException();
 
         public async Task Stop()
         {
@@ -51,7 +66,6 @@ namespace NServiceBus.Raw
         }
 
         TransportInfrastructure transportInfrastructure;
-        IDispatchMessages dispatcher;
 
         SettingsHolder settings;
         RawTransportReceiver receiver;

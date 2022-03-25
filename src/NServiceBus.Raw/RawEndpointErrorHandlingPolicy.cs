@@ -1,10 +1,9 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using NServiceBus.Extensibility;
 using NServiceBus.Faults;
 using NServiceBus.Routing;
 using NServiceBus.Support;
 using NServiceBus.Transport;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace NServiceBus.Raw
 {
@@ -13,11 +12,11 @@ namespace NServiceBus.Raw
     class RawEndpointErrorHandlingPolicy
     {
         string localAddress;
-        IDispatchMessages dispatcher;
+        IMessageDispatcher dispatcher;
         Dictionary<string, string> staticFaultMetadata;
         IErrorHandlingPolicy policy;
 
-        public RawEndpointErrorHandlingPolicy(string endpointName, string localAddress, IDispatchMessages dispatcher, IErrorHandlingPolicy policy)
+        public RawEndpointErrorHandlingPolicy(string endpointName, string localAddress, IMessageDispatcher dispatcher, IErrorHandlingPolicy policy)
         {
             this.localAddress = localAddress;
             this.dispatcher = dispatcher;
@@ -57,7 +56,7 @@ namespace NServiceBus.Raw
             }
             var transportOperations = new TransportOperations(new TransportOperation(outgoingMessage, new UnicastAddressTag(errorQueue)));
 
-            await dispatcher.Dispatch(transportOperations, errorContext.TransportTransaction, new ContextBag()).ConfigureAwait(false);
+            await dispatcher.Dispatch(transportOperations, errorContext.TransportTransaction).ConfigureAwait(false);
             return ErrorHandleResult.Handled;
         }
 

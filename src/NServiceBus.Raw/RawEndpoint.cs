@@ -24,6 +24,7 @@ namespace NServiceBus.Raw
         /// <param name="configuration">Configuration.</param>
         public static async Task<IReceivingRawEndpoint> Start(RawEndpointConfiguration configuration)
         {
+            Guard.AgainstNull(nameof(configuration), configuration);
             var initializable = await Create(configuration).ConfigureAwait(false);
             return await initializable.Start().ConfigureAwait(false);
         }
