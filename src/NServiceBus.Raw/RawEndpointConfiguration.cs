@@ -2,6 +2,7 @@ namespace NServiceBus.Raw
 {
     using NServiceBus.Transport;
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -44,6 +45,7 @@ namespace NServiceBus.Raw
             errorHandlingPolicy = new DefaultErrorHandlingPolicy(poisonMessageQueue, 3);
             sendOnly = onMessage == null;
             pushRuntimeSettings = PushRuntimeSettings.Default;
+            criticalErrorAction = (_, __) => Task.CompletedTask;
         }
 
         /// <summary>
@@ -78,6 +80,16 @@ namespace NServiceBus.Raw
             {
                 this.additionalQueues = additionalQueues;
             }
+        }
+
+        /// <summary>
+        /// Customizes the behavior should a critical error occur
+        /// </summary>
+        public void CriticalErrorAction(Func<ICriticalErrorContext, CancellationToken, Task> criticalErrorAction)
+        {
+            Guard.AgainstNull(nameof(criticalErrorAction), criticalErrorAction);
+
+            this.criticalErrorAction = criticalErrorAction;
         }
 
         /// <summary>
@@ -128,7 +140,7 @@ namespace NServiceBus.Raw
         internal PushRuntimeSettings pushRuntimeSettings;
         internal bool setupInfrastructure;
         internal string[] additionalQueues = new string[0];
-        internal string identity;
         internal bool disablePublishAndSubscribe;
+        internal Func<ICriticalErrorContext, CancellationToken, Task> criticalErrorAction;
     }
 }

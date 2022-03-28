@@ -1,31 +1,17 @@
-using NServiceBus.Logging;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace NServiceBus.Raw
 {
+    using NServiceBus.Logging;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     class RawCriticalError : CriticalError
     {
-        //TODO: was there a way to customize this? YES
         public RawCriticalError(Func<ICriticalErrorContext, CancellationToken, Task> onCriticalErrorAction)
             : base(onCriticalErrorAction)
         {
-            if (onCriticalErrorAction == null)
-            {
-                criticalErrorAction = DefaultCriticalErrorHandling;
-            }
-            else
-            {
-                criticalErrorAction = onCriticalErrorAction;
-            }
-        }
-
-        static Task DefaultCriticalErrorHandling(ICriticalErrorContext criticalErrorContext, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            //TODO: align with NSB
-            return criticalErrorContext.Stop(CancellationToken.None);
+            criticalErrorAction = onCriticalErrorAction;
         }
 
         public override void Raise(string errorMessage, Exception exception, CancellationToken cancellationToken = default(CancellationToken))

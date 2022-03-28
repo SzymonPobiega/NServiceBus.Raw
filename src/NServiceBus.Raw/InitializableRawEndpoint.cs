@@ -12,8 +12,8 @@ namespace NServiceBus.Raw
 
         public async Task<IStartableRawEndpoint> Initialize()
         {
-            //TODO: stop using this
-            var criticalError = new RawCriticalError(null);
+            var criticalError = new RawCriticalError(rawEndpointConfiguration.criticalErrorAction);
+
             var hostSettings = new HostSettings(
                 rawEndpointConfiguration.endpointName,
                 "NServiceBus.Raw host for " + rawEndpointConfiguration.endpointName,
