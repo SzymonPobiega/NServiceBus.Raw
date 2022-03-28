@@ -58,18 +58,6 @@ namespace NServiceBus.Raw
         }
 
         /// <summary>
-        /// Sets the number of immediate retries when message processing fails.
-        /// </summary>
-        public void DefaultErrorHandlingPolicy(string errorQueue, int immediateRetryCount)
-        {
-            Guard.AgainstNegative(nameof(immediateRetryCount), immediateRetryCount);
-            Guard.AgainstNullAndEmpty(nameof(errorQueue), errorQueue);
-
-            PoisonMessageQueue = errorQueue;
-            ErrorHandlingPolicy = new DefaultErrorHandlingPolicy(errorQueue, immediateRetryCount);
-        }
-
-        /// <summary>
         /// Instructs the endpoint to automatically create input queue, poison queue and optionally additional queues if they do not exist.
         /// </summary>
         public void AutoCreateQueues(string[] additionalQueues = null)
