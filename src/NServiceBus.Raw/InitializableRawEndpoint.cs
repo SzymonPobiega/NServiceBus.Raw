@@ -12,29 +12,29 @@ namespace NServiceBus.Raw
 
         public async Task<IStartableRawEndpoint> Initialize()
         {
-            var criticalError = new RawCriticalError(rawEndpointConfiguration.criticalErrorAction);
+            var criticalError = new RawCriticalError(rawEndpointConfiguration.OnCriticalError);
 
             var hostSettings = new HostSettings(
-                rawEndpointConfiguration.endpointName,
-                "NServiceBus.Raw host for " + rawEndpointConfiguration.endpointName,
+                rawEndpointConfiguration.EndpointName,
+                "NServiceBus.Raw host for " + rawEndpointConfiguration.EndpointName,
                 new StartupDiagnosticEntries(),
                 criticalError.Raise,
-                rawEndpointConfiguration.setupInfrastructure,
+                rawEndpointConfiguration.SetupInfrastructure,
                 null); //null means "not hosted by core", transport SHOULD adjust accordingly to not assume things
 
-            var usePubSub = rawEndpointConfiguration.transportDefinition.SupportsPublishSubscribe && !rawEndpointConfiguration.disablePublishAndSubscribe;
+            var usePubSub = rawEndpointConfiguration.TransportDefinition.SupportsPublishSubscribe && !rawEndpointConfiguration.PublishAndSubscribeDisabled;
             var receivers = new[]{
                 new ReceiveSettings(
-                    rawEndpointConfiguration.endpointName,
-                    new QueueAddress(rawEndpointConfiguration.endpointName),
+                    rawEndpointConfiguration.EndpointName,
+                    new QueueAddress(rawEndpointConfiguration.EndpointName),
                     usePubSub,
                     false,
-                    rawEndpointConfiguration.poisonMessageQueue)};
+                    rawEndpointConfiguration.PoisonMessageQueue)};
 
-            var transportInfrastructure = await rawEndpointConfiguration.transportDefinition.Initialize(
+            var transportInfrastructure = await rawEndpointConfiguration.TransportDefinition.Initialize(
                 hostSettings,
                 receivers,
-                rawEndpointConfiguration.additionalQueues);
+                rawEndpointConfiguration.AdditionalQueues);
 
             var startableEndpoint = new StartableRawEndpoint(
                 rawEndpointConfiguration,

@@ -38,14 +38,14 @@ namespace NServiceBus.Raw
         {
             ValidateEndpointName(endpointName);
 
-            this.endpointName = endpointName;
-            this.transportDefinition = transportDefinition;
-            this.onMessage = onMessage;
-            this.poisonMessageQueue = poisonMessageQueue;
-            errorHandlingPolicy = new DefaultErrorHandlingPolicy(poisonMessageQueue, 3);
-            sendOnly = onMessage == null;
-            pushRuntimeSettings = PushRuntimeSettings.Default;
-            criticalErrorAction = (_, __) => Task.CompletedTask;
+            this.EndpointName = endpointName;
+            this.TransportDefinition = transportDefinition;
+            this.OnMessage = onMessage;
+            this.PoisonMessageQueue = poisonMessageQueue;
+            ErrorHandlingPolicy = new DefaultErrorHandlingPolicy(poisonMessageQueue, 3);
+            SendOnly = onMessage == null;
+            PushRuntimeSettings = PushRuntimeSettings.Default;
+            OnCriticalError = (_, __) => Task.CompletedTask;
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace NServiceBus.Raw
         public void CustomErrorHandlingPolicy(IErrorHandlingPolicy customPolicy)
         {
             Guard.AgainstNull(nameof(customPolicy), customPolicy);
-            errorHandlingPolicy = customPolicy;
+            ErrorHandlingPolicy = customPolicy;
         }
 
         /// <summary>
@@ -65,8 +65,8 @@ namespace NServiceBus.Raw
             Guard.AgainstNegative(nameof(immediateRetryCount), immediateRetryCount);
             Guard.AgainstNullAndEmpty(nameof(errorQueue), errorQueue);
 
-            poisonMessageQueue = errorQueue;
-            errorHandlingPolicy = new DefaultErrorHandlingPolicy(errorQueue, immediateRetryCount);
+            PoisonMessageQueue = errorQueue;
+            ErrorHandlingPolicy = new DefaultErrorHandlingPolicy(errorQueue, immediateRetryCount);
         }
 
         /// <summary>
@@ -74,11 +74,11 @@ namespace NServiceBus.Raw
         /// </summary>
         public void AutoCreateQueues(string[] additionalQueues = null)
         {
-            setupInfrastructure = true;
+            SetupInfrastructure = true;
 
             if (additionalQueues != null)
             {
-                this.additionalQueues = additionalQueues;
+                this.AdditionalQueues = additionalQueues;
             }
         }
 
@@ -89,7 +89,7 @@ namespace NServiceBus.Raw
         {
             Guard.AgainstNull(nameof(criticalErrorAction), criticalErrorAction);
 
-            this.criticalErrorAction = criticalErrorAction;
+            this.OnCriticalError = criticalErrorAction;
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace NServiceBus.Raw
         /// </summary>
         public void DisablePublishAndSubscribe()
         {
-            disablePublishAndSubscribe = true;
+            PublishAndSubscribeDisabled = true;
         }
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace NServiceBus.Raw
         {
             Guard.AgainstNegativeAndZero(nameof(maxConcurrency), maxConcurrency);
 
-            pushRuntimeSettings = new PushRuntimeSettings(maxConcurrency);
+            PushRuntimeSettings = new PushRuntimeSettings(maxConcurrency);
         }
 
         internal InitializableRawEndpoint Build()
@@ -130,17 +130,16 @@ namespace NServiceBus.Raw
         }
 
 
-        //todo: use private set
-        internal bool sendOnly;
-        internal IErrorHandlingPolicy errorHandlingPolicy;
-        internal Func<MessageContext, IMessageDispatcher, Task> onMessage;
-        internal string poisonMessageQueue;
-        internal string endpointName;
-        internal TransportDefinition transportDefinition;
-        internal PushRuntimeSettings pushRuntimeSettings;
-        internal bool setupInfrastructure;
-        internal string[] additionalQueues = new string[0];
-        internal bool disablePublishAndSubscribe;
-        internal Func<ICriticalErrorContext, CancellationToken, Task> criticalErrorAction;
+        internal bool SendOnly { get; private set; }
+        internal IErrorHandlingPolicy ErrorHandlingPolicy { get; private set; }
+        internal Func<MessageContext, IMessageDispatcher, Task> OnMessage { get; private set; }
+        internal string PoisonMessageQueue { get; private set; }
+        internal string EndpointName { get; private set; }
+        internal TransportDefinition TransportDefinition { get; private set; }
+        internal PushRuntimeSettings PushRuntimeSettings { get; private set; }
+        internal bool SetupInfrastructure { get; private set; }
+        internal string[] AdditionalQueues { get; private set; } = new string[0];
+        internal bool PublishAndSubscribeDisabled { get; private set; }
+        internal Func<ICriticalErrorContext, CancellationToken, Task> OnCriticalError { get; private set; }
     }
 }

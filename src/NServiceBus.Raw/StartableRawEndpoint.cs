@@ -34,7 +34,7 @@ namespace NServiceBus.Raw
 
             RawTransportReceiver receiver = null;
 
-            if (!rawEndpointConfiguration.sendOnly)
+            if (!rawEndpointConfiguration.SendOnly)
             {
                 receiver = BuildMainReceiver();
 
@@ -69,7 +69,7 @@ namespace NServiceBus.Raw
         public ISubscriptionManager SubscriptionManager { get; }
 
         public string TransportAddress { get; }
-        public string EndpointName => rawEndpointConfiguration.endpointName;
+        public string EndpointName => rawEndpointConfiguration.EndpointName;
 
         public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -109,13 +109,13 @@ namespace NServiceBus.Raw
 
         RawTransportReceiver BuildMainReceiver()
         {
-            var endpointName = rawEndpointConfiguration.endpointName;
+            var endpointName = rawEndpointConfiguration.EndpointName;
             var receiver = new RawTransportReceiver(
                 messagePump,
                 dispatcher,
-                rawEndpointConfiguration.onMessage,
-                rawEndpointConfiguration.pushRuntimeSettings,
-                new RawEndpointErrorHandlingPolicy(endpointName, endpointName, dispatcher, rawEndpointConfiguration.errorHandlingPolicy));
+                rawEndpointConfiguration.OnMessage,
+                rawEndpointConfiguration.PushRuntimeSettings,
+                new RawEndpointErrorHandlingPolicy(endpointName, endpointName, dispatcher, rawEndpointConfiguration.ErrorHandlingPolicy));
             return receiver;
         }
 
