@@ -1,11 +1,12 @@
 ﻿using NServiceBus;
+using NServiceBus.Transport;
 using NUnit.Framework;
 
 [TestFixture]
 public class When_sending_from_send_only_endpoint_ASQ : When_sending_from_send_only_endpoint<AzureStorageQueueTransport>
 {
-    protected override void SetupTransport(TransportExtensions<AzureStorageQueueTransport> extensions)
+    protected override TransportDefinition SetupTransport()
     {
-        extensions.ConfigureASQ();
+        return Helper.ConfigureASQ();
     }
 }

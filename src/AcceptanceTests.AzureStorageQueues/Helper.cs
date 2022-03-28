@@ -3,9 +3,13 @@ using NServiceBus.AcceptanceTests.ScenarioDescriptors;
 
 public static class Helper
 {
-    public static void ConfigureASQ(this TransportExtensions<AzureStorageQueueTransport> extensions)
+    public static AzureStorageQueueTransport ConfigureASQ()
     {
         var connectionString = EnvironmentHelper.GetEnvironmentVariable("AzureStorageQueues.ConnectionString");
-        extensions.ConnectionString(connectionString);
+
+        return new AzureStorageQueueTransport(connectionString)
+        {
+            MessageWrapperSerializationDefinition = new NewtonsoftSerializer()
+        };
     }
 }
