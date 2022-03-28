@@ -1,19 +1,15 @@
 namespace NServiceBus.Raw
 {
     using Logging;
-    using Settings;
     using System.Threading.Tasks;
     using Transport;
 
     class StoppableRawEndpoint : IStoppableRawEndpoint
     {
-        TransportInfrastructure transportInfrastructure;
-        SettingsHolder settings;
 
-        public StoppableRawEndpoint(TransportInfrastructure transportInfrastructure, SettingsHolder settings)
+        public StoppableRawEndpoint(TransportInfrastructure transportInfrastructure)
         {
             this.transportInfrastructure = transportInfrastructure;
-            this.settings = settings;
         }
 
         public async Task Stop()
@@ -30,10 +26,11 @@ namespace NServiceBus.Raw
             }
             finally
             {
-                settings.Clear();
                 Log.Info("Shutdown complete.");
             }
         }
+
+        TransportInfrastructure transportInfrastructure;
 
         static ILog Log = LogManager.GetLogger<StoppableRawEndpoint>();
     }

@@ -1,7 +1,6 @@
 namespace NServiceBus.Raw
 {
     using NServiceBus.Logging;
-    using NServiceBus.Settings;
     using NServiceBus.Transport;
     using System;
     using System.Linq;
@@ -11,16 +10,13 @@ namespace NServiceBus.Raw
     class StartableRawEndpoint : IStartableRawEndpoint
     {
         public StartableRawEndpoint(
-            SettingsHolder settings,
             RawEndpointConfiguration rawEndpointConfiguration,
             TransportInfrastructure transportInfrastructure,
-            RawCriticalError criticalError,
-            Func<MessageContext, IMessageDispatcher, Task> onMessage)
+            RawCriticalError criticalError)
         {
             this.criticalError = criticalError;
             this.messagePump = transportInfrastructure.Receivers.Values.First();
             this.dispatcher = transportInfrastructure.Dispatcher;
-            this.settings = settings;
             this.rawEndpointConfiguration = rawEndpointConfiguration;
             this.transportInfrastructure = transportInfrastructure;
             SubscriptionManager = messagePump.Subscriptions;
@@ -38,7 +34,7 @@ namespace NServiceBus.Raw
 
             RawTransportReceiver receiver = null;
 
-            if (!rawEndpointConfiguration.SendOnly)
+            if (!rawEndpointConfiguration.sendOnly)
             {
                 receiver = BuildMainReceiver();
 
@@ -48,7 +44,7 @@ namespace NServiceBus.Raw
                 }
             }
 
-            var runningInstance = new RunningRawEndpointInstance(EndpointName, settings, receiver, transportInfrastructure);
+            var runningInstance = new RunningRawEndpointInstance(EndpointName, receiver, transportInfrastructure);
 
             // set the started endpoint on CriticalError to pass the endpoint to the critical error action
             criticalError.SetEndpoint(runningInstance);
@@ -123,7 +119,6 @@ namespace NServiceBus.Raw
             return receiver;
         }
 
-        readonly SettingsHolder settings;
         readonly RawEndpointConfiguration rawEndpointConfiguration;
         TransportInfrastructure transportInfrastructure;
         RawCriticalError criticalError;

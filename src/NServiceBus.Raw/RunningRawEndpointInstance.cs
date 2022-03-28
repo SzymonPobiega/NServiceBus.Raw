@@ -10,14 +10,12 @@ namespace NServiceBus.Raw
     {
         public RunningRawEndpointInstance(
             string endpointName,
-            SettingsHolder settings,
             RawTransportReceiver receiver,
             TransportInfrastructure transportInfrastructure)
         {
             this.receiver = receiver;
             this.transportInfrastructure = transportInfrastructure;
             EndpointName = endpointName;
-            this.settings = settings;
         }
 
         public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, CancellationToken cancellation = default)
@@ -38,7 +36,7 @@ namespace NServiceBus.Raw
                 await receiver.Stop().ConfigureAwait(false);
                 Log.Info("Receiver stopped.");
             }
-            return new StoppableRawEndpoint(transportInfrastructure, settings);
+            return new StoppableRawEndpoint(transportInfrastructure);
         }
 
         public string TransportAddress
@@ -66,8 +64,6 @@ namespace NServiceBus.Raw
         }
 
         TransportInfrastructure transportInfrastructure;
-
-        SettingsHolder settings;
         RawTransportReceiver receiver;
 
         static ILog Log = LogManager.GetLogger<RunningRawEndpointInstance>();

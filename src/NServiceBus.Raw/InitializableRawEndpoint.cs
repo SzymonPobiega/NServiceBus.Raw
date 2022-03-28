@@ -1,56 +1,47 @@
-using NServiceBus.Settings;
-using NServiceBus.Transport;
-using System;
-using System.Threading.Tasks;
-
 namespace NServiceBus.Raw
 {
+    using NServiceBus.Transport;
+    using System.Threading.Tasks;
 
     class InitializableRawEndpoint
     {
         public InitializableRawEndpoint(
-            SettingsHolder settings,
             RawEndpointConfiguration rawEndpointConfiguration)
         {
-            this.settings = settings;
             this.rawEndpointConfiguration = rawEndpointConfiguration;
         }
 
         public async Task<IStartableRawEndpoint> Initialize()
         {
-            var setupInfrastructure = true;
+            var criticalError = new RawCriticalError(null);
             var hostSettings = new HostSettings(
-                "someHost",
-                "some host display name",
-                new StartupDiagnosticEntries(),
-                (m, ex, ct) => { Console.WriteLine(ex.ToString()); },
-                setupInfrastructure,
+                "someHost", //TODO: what did the old version use?
+                "some host display name",//TODO: what did the old version use?
+                new StartupDiagnosticEntries(), //TODO: should we dump this somewhere?
+                criticalError.Raise,
+                rawEndpointConfiguration.setupInfrastructure,
                 null); //null means "not hosted by core", transport SHOULD adjust accordingly to not assume things
 
             var receivers = new[]{
                 new ReceiveSettings(
-                    "myInputQueue",
-                    new QueueAddress("myInputQueue"),
+                    rawEndpointConfiguration.endpointName,
+                    new QueueAddress(rawEndpointConfiguration.endpointName),
                     true,
-                    false,
-                    "error")};
+                    false, //TODO: Purge was never supported by raw?
+                    rawEndpointConfiguration.poisonMessageQueue)};
 
             var transportInfrastructure = await rawEndpointConfiguration.transportDefinition.Initialize(
                 hostSettings,
                 receivers,
-                new string[] { "todo" });
+                rawEndpointConfiguration.additionalQueues);
 
-            var criticalError = new RawCriticalError(null);
             var startableEndpoint = new StartableRawEndpoint(
-                settings,
                 rawEndpointConfiguration,
                 transportInfrastructure,
-                criticalError,
-                rawEndpointConfiguration.onMessage);
+                criticalError);
             return startableEndpoint;
         }
 
-        readonly SettingsHolder settings;
         readonly RawEndpointConfiguration rawEndpointConfiguration;
     }
 }

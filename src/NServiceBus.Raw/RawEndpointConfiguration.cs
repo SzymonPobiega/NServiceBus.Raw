@@ -1,6 +1,5 @@
 namespace NServiceBus.Raw
 {
-    using NServiceBus.Settings;
     using NServiceBus.Transport;
     using System;
     using System.Threading.Tasks;
@@ -44,7 +43,7 @@ namespace NServiceBus.Raw
             this.onMessage = onMessage;
             this.poisonMessageQueue = poisonMessageQueue;
             errorHandlingPolicy = new DefaultErrorHandlingPolicy(poisonMessageQueue, 3);
-            SendOnly = onMessage == null;
+            sendOnly = onMessage == null;
             pushRuntimeSettings = PushRuntimeSettings.Default;
         }
 
@@ -70,27 +69,17 @@ namespace NServiceBus.Raw
         }
 
         /// <summary>
-        /// Instructs the endpoint to automatically create input queue and poison queue if they do not exist.
+        /// Instructs the endpoint to automatically create input queue, poison queue and optionally additional queues if they do not exist.
         /// </summary>
-        public void AutoCreateQueue(string identity = null)
+        public void AutoCreateQueues(string identity = null, string[] additionalQueues = null)
         {
-            Settings.Set("NServiceBus.Raw.CreateQueue", true);
+            setupInfrastructure = true;
+            this.additionalQueues = additionalQueues;
+
             if (identity != null)
             {
-                Settings.Set("NServiceBus.Raw.Identity", identity);
+                this.identity = identity; //TODO: Not being used anymore
             }
-        }
-
-        /// <summary>
-        /// Instructs the endpoint to automatically create input queue, poison queue and provided additional queues if they do not exist.
-        /// </summary>
-        public void AutoCreateQueues(string[] additionalQueues, string identity = null)
-        {
-            foreach (var additionalQueue in additionalQueues)
-            {
-                queueBindings.BindSending(additionalQueue);
-            }
-            AutoCreateQueue(identity);
         }
 
         /// <summary>
@@ -106,7 +95,7 @@ namespace NServiceBus.Raw
 
         internal InitializableRawEndpoint Build()
         {
-            return new InitializableRawEndpoint(Settings, this);
+            return new InitializableRawEndpoint(this);
         }
 
         static void ValidateEndpointName(string endpointName)
@@ -122,19 +111,15 @@ namespace NServiceBus.Raw
             }
         }
 
-
-        /// <summary>
-        /// Exposes raw settings object.
-        /// </summary>
-        public SettingsHolder Settings { get; } = new SettingsHolder();
-        internal bool SendOnly { get; }
-
+        internal bool sendOnly;
         internal IErrorHandlingPolicy errorHandlingPolicy;
         internal Func<MessageContext, IMessageDispatcher, Task> onMessage;
         internal string poisonMessageQueue;
-        QueueBindings queueBindings = new QueueBindings();
         internal string endpointName;
         internal TransportDefinition transportDefinition;
         internal PushRuntimeSettings pushRuntimeSettings;
+        internal bool setupInfrastructure;
+        internal string[] additionalQueues;
+        internal string identity;
     }
 }

@@ -79,7 +79,7 @@ class RawEndpointComponent<TContext> : IComponentBehavior
             ? RawEndpointConfiguration.CreateSendOnly(name, transportDefinition)
             : RawEndpointConfiguration.Create(name, transportDefinition, (c, d) => onMessage(c, typedScenarioContext, d), "poison");
 
-        config.AutoCreateQueue();
+        config.AutoCreateQueues();
 
         if (configure != null)
         {

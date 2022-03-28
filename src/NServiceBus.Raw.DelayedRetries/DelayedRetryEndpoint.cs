@@ -37,7 +37,7 @@
 
             outConfig.LimitMessageProcessingConcurrencyTo(1);
             outConfig.CustomErrorHandlingPolicy(new RetryForeverPolicy());
-            outConfig.AutoCreateQueue();
+            outConfig.AutoCreateQueues();
 
             outEndpoint = await RawEndpoint.Start(outConfig).ConfigureAwait(false);
         }
