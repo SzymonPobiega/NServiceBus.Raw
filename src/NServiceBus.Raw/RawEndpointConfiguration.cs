@@ -23,8 +23,7 @@ namespace NServiceBus.Raw
         public static RawEndpointConfiguration Create(
             string endpointName,
             TransportDefinition transportDefinition,
-            Func<MessageContext,
-            IMessageDispatcher, Task> onMessage,
+            Func<MessageContext, IMessageDispatcher, Task> onMessage, //TODO: add cancellation token
             string poisonMessageQueue)
         {
             return new RawEndpointConfiguration(endpointName, transportDefinition, onMessage, poisonMessageQueue);
@@ -71,7 +70,7 @@ namespace NServiceBus.Raw
         /// <summary>
         /// Instructs the endpoint to automatically create input queue, poison queue and optionally additional queues if they do not exist.
         /// </summary>
-        public void AutoCreateQueues(string identity = null, string[] additionalQueues = null)
+        public void AutoCreateQueues(string[] additionalQueues = null)
         {
             setupInfrastructure = true;
 
@@ -79,11 +78,14 @@ namespace NServiceBus.Raw
             {
                 this.additionalQueues = additionalQueues;
             }
+        }
 
-            if (identity != null)
-            {
-                this.identity = identity; //TODO: Not being used anymore
-            }
+        /// <summary>
+        /// Instructs the endpoint to not enable the pub/sub capabilities of the transport.
+        /// </summary>
+        public void DisablePublishAndSubscribe()
+        {
+            disablePublishAndSubscribe = true;
         }
 
         /// <summary>
@@ -115,6 +117,8 @@ namespace NServiceBus.Raw
             }
         }
 
+
+        //todo: use private set
         internal bool sendOnly;
         internal IErrorHandlingPolicy errorHandlingPolicy;
         internal Func<MessageContext, IMessageDispatcher, Task> onMessage;
@@ -125,5 +129,6 @@ namespace NServiceBus.Raw
         internal bool setupInfrastructure;
         internal string[] additionalQueues = new string[0];
         internal string identity;
+        internal bool disablePublishAndSubscribe;
     }
 }

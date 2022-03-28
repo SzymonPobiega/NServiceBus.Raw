@@ -8,7 +8,7 @@ namespace NServiceBus.Raw
 {
     class RawCriticalError : CriticalError
     {
-        //TODO: was there a way to customize this?
+        //TODO: was there a way to customize this? YES
         public RawCriticalError(Func<ICriticalErrorContext, CancellationToken, Task> onCriticalErrorAction)
             : base(onCriticalErrorAction)
         {
@@ -24,6 +24,7 @@ namespace NServiceBus.Raw
 
         static Task DefaultCriticalErrorHandling(ICriticalErrorContext criticalErrorContext, CancellationToken cancellationToken = default(CancellationToken))
         {
+            //TODO: align with NSB
             return criticalErrorContext.Stop(CancellationToken.None);
         }
 

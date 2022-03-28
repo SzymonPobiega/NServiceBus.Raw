@@ -5,29 +5,30 @@ namespace NServiceBus.Raw
 
     class InitializableRawEndpoint
     {
-        public InitializableRawEndpoint(
-            RawEndpointConfiguration rawEndpointConfiguration)
+        public InitializableRawEndpoint(RawEndpointConfiguration rawEndpointConfiguration)
         {
             this.rawEndpointConfiguration = rawEndpointConfiguration;
         }
 
         public async Task<IStartableRawEndpoint> Initialize()
         {
+            //TODO: stop using this
             var criticalError = new RawCriticalError(null);
             var hostSettings = new HostSettings(
-                "someHost", //TODO: what did the old version use?
-                "some host display name",//TODO: what did the old version use?
-                new StartupDiagnosticEntries(), //TODO: should we dump this somewhere?
+                rawEndpointConfiguration.endpointName,
+                "NServiceBus.Raw host for " + rawEndpointConfiguration.endpointName,
+                new StartupDiagnosticEntries(),
                 criticalError.Raise,
                 rawEndpointConfiguration.setupInfrastructure,
                 null); //null means "not hosted by core", transport SHOULD adjust accordingly to not assume things
 
+            var usePubSub = rawEndpointConfiguration.transportDefinition.SupportsPublishSubscribe && !rawEndpointConfiguration.disablePublishAndSubscribe;
             var receivers = new[]{
                 new ReceiveSettings(
                     rawEndpointConfiguration.endpointName,
                     new QueueAddress(rawEndpointConfiguration.endpointName),
-                    rawEndpointConfiguration.transportDefinition.SupportsPublishSubscribe,
-                    false, //TODO: Purge was never supported by raw?
+                    usePubSub,
+                    false,
                     rawEndpointConfiguration.poisonMessageQueue)};
 
             var transportInfrastructure = await rawEndpointConfiguration.transportDefinition.Initialize(
