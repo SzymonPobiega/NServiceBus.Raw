@@ -7,7 +7,7 @@ namespace NServiceBus.AcceptanceTests
     using Transport;
 
     public abstract class NServiceBusAcceptanceTest<TTransport>
-        where TTransport : TransportDefinition, new()
+        where TTransport : TransportDefinition
     {
         protected abstract TransportDefinition SetupTransport();
 

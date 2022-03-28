@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 public abstract class When_using_delayed_retries<TTransport> : NServiceBusAcceptanceTest<TTransport>
-    where TTransport : TransportDefinition, new()
+    where TTransport : TransportDefinition
 {
     [Test]
     public async Task It_should_retry_the_message_configured_number_of_times()

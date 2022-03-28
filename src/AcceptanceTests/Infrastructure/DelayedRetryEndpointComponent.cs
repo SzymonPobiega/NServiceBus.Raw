@@ -12,7 +12,7 @@ static class DelayedRetryEndpointComponentExtensions
         TransportDefinition transportDefinition,
         string name)
         where TContext : ScenarioContext
-        where TTransport : TransportDefinition, new()
+        where TTransport : TransportDefinition
     {
         var component = new DelayedRetryEndpointComponent<TTransport, TContext>(name, transportDefinition);
         return scenario.WithComponent(component);
@@ -21,7 +21,7 @@ static class DelayedRetryEndpointComponentExtensions
 
 class DelayedRetryEndpointComponent<TTransport, TContext> : IComponentBehavior
     where TContext : ScenarioContext
-    where TTransport : TransportDefinition, new()
+    where TTransport : TransportDefinition
 {
     string name;
     TransportDefinition transportDefinition;

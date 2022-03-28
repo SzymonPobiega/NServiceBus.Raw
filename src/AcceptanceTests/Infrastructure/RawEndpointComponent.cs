@@ -18,7 +18,7 @@ static class RawEndpointComponentExtensions
         Func<IRawEndpoint, TContext, Task> onStarted = null,
         Action<RawEndpointConfiguration> configure = null)
         where TContext : ScenarioContext
-        where TTransport : TransportDefinition, new()
+        where TTransport : TransportDefinition
     {
         var component = new RawEndpointComponent<TContext>(name, transportDefinition, onMessage, onStarting, onStarted, configure);
         return scenario.WithComponent(component);
@@ -31,7 +31,7 @@ static class RawEndpointComponentExtensions
         Func<IRawEndpoint, TContext, Task> onStarted = null,
         Action<RawEndpointConfiguration> configure = null)
         where TContext : ScenarioContext
-        where TTransport : TransportDefinition, new()
+        where TTransport : TransportDefinition
     {
         var component = new RawEndpointComponent<TContext>(name, transportDefinition, null, onStarting, onStarted, configure);
         return scenario.WithComponent(component);

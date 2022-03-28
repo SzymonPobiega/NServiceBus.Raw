@@ -74,7 +74,11 @@ namespace NServiceBus.Raw
         public void AutoCreateQueues(string identity = null, string[] additionalQueues = null)
         {
             setupInfrastructure = true;
-            this.additionalQueues = additionalQueues;
+
+            if (additionalQueues != null)
+            {
+                this.additionalQueues = additionalQueues;
+            }
 
             if (identity != null)
             {
@@ -119,7 +123,7 @@ namespace NServiceBus.Raw
         internal TransportDefinition transportDefinition;
         internal PushRuntimeSettings pushRuntimeSettings;
         internal bool setupInfrastructure;
-        internal string[] additionalQueues;
+        internal string[] additionalQueues = new string[0];
         internal string identity;
     }
 }

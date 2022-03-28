@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 public abstract class When_sending_to_another_endpoint<TTransport> : NServiceBusAcceptanceTest<TTransport>
-    where TTransport : TransportDefinition, new()
+    where TTransport : TransportDefinition
 {
     [Test]
     public async Task It_receives_the_message()
