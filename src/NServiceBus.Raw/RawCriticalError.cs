@@ -8,6 +8,7 @@ namespace NServiceBus.Raw
 {
     class RawCriticalError : CriticalError
     {
+        //TODO: was there a way to customize this?
         public RawCriticalError(Func<ICriticalErrorContext, CancellationToken, Task> onCriticalErrorAction)
             : base(onCriticalErrorAction)
         {

@@ -26,7 +26,7 @@ namespace NServiceBus.Raw
                 new ReceiveSettings(
                     rawEndpointConfiguration.endpointName,
                     new QueueAddress(rawEndpointConfiguration.endpointName),
-                    true,
+                    rawEndpointConfiguration.transportDefinition.SupportsPublishSubscribe,
                     false, //TODO: Purge was never supported by raw?
                     rawEndpointConfiguration.poisonMessageQueue)};
 
