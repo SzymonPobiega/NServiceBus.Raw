@@ -1,7 +1,8 @@
 namespace NServiceBus.Raw
 {
-    using NServiceBus.Transport;
+    using System.Threading;
     using System.Threading.Tasks;
+    using NServiceBus.Transport;
 
     class InitializableRawEndpoint
     {
@@ -10,7 +11,7 @@ namespace NServiceBus.Raw
             this.rawEndpointConfiguration = rawEndpointConfiguration;
         }
 
-        public async Task<IStartableRawEndpoint> Initialize()
+        public async Task<IStartableRawEndpoint> Initialize(CancellationToken cancellationToken = default)
         {
             var criticalError = new RawCriticalError(rawEndpointConfiguration.OnCriticalError);
 
@@ -34,7 +35,8 @@ namespace NServiceBus.Raw
             var transportInfrastructure = await rawEndpointConfiguration.TransportDefinition.Initialize(
                 hostSettings,
                 receivers,
-                rawEndpointConfiguration.AdditionalQueues);
+                rawEndpointConfiguration.AdditionalQueues,
+                cancellationToken).ConfigureAwait(false);
 
             var startableEndpoint = new StartableRawEndpoint(
                 rawEndpointConfiguration,

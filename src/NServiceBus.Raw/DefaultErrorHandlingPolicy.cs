@@ -1,5 +1,6 @@
 namespace NServiceBus.Raw
 {
+    using System.Threading;
     using System.Threading.Tasks;
     using Transport;
 
@@ -14,13 +15,13 @@ namespace NServiceBus.Raw
             this.immediateRetryCount = immediateRetryCount;
         }
 
-        public Task<ErrorHandleResult> OnError(IErrorHandlingPolicyContext handlingContext, IMessageDispatcher dispatcher)
+        public Task<ErrorHandleResult> OnError(IErrorHandlingPolicyContext handlingContext, IMessageDispatcher dispatcher, CancellationToken cancellationToken = default)
         {
             if (handlingContext.Error.ImmediateProcessingFailures < immediateRetryCount)
             {
                 return Task.FromResult(ErrorHandleResult.RetryRequired);
             }
-            return handlingContext.MoveToErrorQueue(errorQueue);
+            return handlingContext.MoveToErrorQueue(errorQueue, cancellationToken: cancellationToken);
         }
     }
 }

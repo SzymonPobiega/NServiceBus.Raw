@@ -1,9 +1,9 @@
 namespace NServiceBus.Raw
 {
-    using NServiceBus.Transport;
     using System;
     using System.Threading;
     using System.Threading.Tasks;
+    using NServiceBus.Transport;
 
     /// <summary>
     /// Configuration used to create a raw endpoint instance.
@@ -24,7 +24,7 @@ namespace NServiceBus.Raw
         public static RawEndpointConfiguration Create(
             string endpointName,
             TransportDefinition transportDefinition,
-            Func<MessageContext, IMessageDispatcher, Task> onMessage, //TODO: add cancellation token
+            Func<MessageContext, IMessageDispatcher, CancellationToken, Task> onMessage, //TODO: add cancellation token
             string poisonMessageQueue)
         {
             return new RawEndpointConfiguration(endpointName, transportDefinition, onMessage, poisonMessageQueue);
@@ -33,7 +33,7 @@ namespace NServiceBus.Raw
         RawEndpointConfiguration(
             string endpointName,
             TransportDefinition transportDefinition,
-            Func<MessageContext, IMessageDispatcher, Task> onMessage,
+            Func<MessageContext, IMessageDispatcher, CancellationToken, Task> onMessage,
             string poisonMessageQueue)
         {
             ValidateEndpointName(endpointName);
@@ -67,7 +67,7 @@ namespace NServiceBus.Raw
 
             if (additionalQueues != null)
             {
-                this.AdditionalQueues = additionalQueues;
+                AdditionalQueues = additionalQueues;
             }
         }
 
@@ -78,7 +78,7 @@ namespace NServiceBus.Raw
         {
             Guard.AgainstNull(nameof(criticalErrorAction), criticalErrorAction);
 
-            this.OnCriticalError = criticalErrorAction;
+            OnCriticalError = criticalErrorAction;
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace NServiceBus.Raw
 
         internal bool SendOnly { get; private set; }
         internal IErrorHandlingPolicy ErrorHandlingPolicy { get; private set; }
-        internal Func<MessageContext, IMessageDispatcher, Task> OnMessage { get; private set; }
+        internal Func<MessageContext, IMessageDispatcher, CancellationToken, Task> OnMessage { get; private set; }
         internal string PoisonMessageQueue { get; private set; }
         internal string EndpointName { get; private set; }
         internal TransportDefinition TransportDefinition { get; private set; }

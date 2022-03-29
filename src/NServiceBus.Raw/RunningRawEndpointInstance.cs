@@ -1,11 +1,11 @@
-using NServiceBus.Logging;
-using NServiceBus.Settings;
-using NServiceBus.Transport;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace NServiceBus.Raw
 {
+    using System.Threading;
+    using System.Threading.Tasks;
+    using NServiceBus.Logging;
+    using NServiceBus.Settings;
+    using NServiceBus.Transport;
+
     class RunningRawEndpointInstance : IReceivingRawEndpoint
     {
         public RunningRawEndpointInstance(
@@ -18,9 +18,9 @@ namespace NServiceBus.Raw
             EndpointName = endpointName;
         }
 
-        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, CancellationToken cancellation = default)
+        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, CancellationToken cancellationToken = default)
         {
-            return transportInfrastructure.Dispatcher.Dispatch(outgoingMessages, transaction);
+            return transportInfrastructure.Dispatcher.Dispatch(outgoingMessages, transaction, cancellationToken);
         }
 
         public string ToTransportAddress(QueueAddress logicalAddress)
@@ -28,39 +28,27 @@ namespace NServiceBus.Raw
             return transportInfrastructure.ToTransportAddress(logicalAddress);
         }
 
-        public async Task<IStoppableRawEndpoint> StopReceiving()
+        public async Task<IStoppableRawEndpoint> StopReceiving(CancellationToken cancellationToken = default)
         {
             if (receiver != null)
             {
                 Log.Info("Stopping receiver.");
-                await receiver.Stop().ConfigureAwait(false);
+                await receiver.Stop(cancellationToken).ConfigureAwait(false);
                 Log.Info("Receiver stopped.");
             }
             return new StoppableRawEndpoint(transportInfrastructure);
         }
 
-        public string TransportAddress
-        {
-            get
-            {
-                return receiver.Receiver.ReceiveAddress;
-            }
-        }
+        public string TransportAddress => receiver.Receiver.ReceiveAddress;
         public string EndpointName { get; }
-        public ISubscriptionManager SubscriptionManager
-        {
-            get
-            {
-                return receiver.Receiver.Subscriptions;
-            }
-        }
+        public ISubscriptionManager SubscriptionManager => receiver.Receiver.Subscriptions;
 
         public IReadOnlySettings Settings => throw new System.NotImplementedException();
 
-        public async Task Stop()
+        public async Task Stop(CancellationToken cancellationToken = default)
         {
-            var stoppable = await StopReceiving().ConfigureAwait(false);
-            await stoppable.Stop();
+            var stoppable = await StopReceiving(cancellationToken).ConfigureAwait(false);
+            await stoppable.Stop(cancellationToken).ConfigureAwait(false);
         }
 
         TransportInfrastructure transportInfrastructure;

@@ -1,5 +1,6 @@
 namespace NServiceBus.Raw
 {
+    using System.Threading;
     using System.Threading.Tasks;
     using Transport;
 
@@ -11,8 +12,6 @@ namespace NServiceBus.Raw
         /// <summary>
         /// Invoked when an error occurs while processing a message.
         /// </summary>
-        /// <param name="handlingContext">Error handling context.</param>
-        /// <param name="dispatcher">Dispatcher.</param>
-        Task<ErrorHandleResult> OnError(IErrorHandlingPolicyContext handlingContext, IMessageDispatcher dispatcher);
+        Task<ErrorHandleResult> OnError(IErrorHandlingPolicyContext handlingContext, IMessageDispatcher dispatcher, CancellationToken cancellationToken = default);
     }
 }

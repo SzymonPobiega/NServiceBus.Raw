@@ -1,13 +1,13 @@
-using NServiceBus.Faults;
-using NServiceBus.Routing;
-using NServiceBus.Support;
-using NServiceBus.Transport;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 namespace NServiceBus.Raw
 {
     using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using NServiceBus.Faults;
+    using NServiceBus.Routing;
+    using NServiceBus.Support;
+    using NServiceBus.Transport;
 
     class RawEndpointErrorHandlingPolicy
     {
@@ -30,12 +30,12 @@ namespace NServiceBus.Raw
             };
         }
 
-        public Task<ErrorHandleResult> OnError(ErrorContext errorContext)
+        public Task<ErrorHandleResult> OnError(ErrorContext errorContext, CancellationToken cancellationToken = default)
         {
-            return policy.OnError(new Context(localAddress, errorContext, MoveToErrorQueue), dispatcher);
+            return policy.OnError(new Context(localAddress, errorContext, MoveToErrorQueue), dispatcher, cancellationToken);
         }
 
-        async Task<ErrorHandleResult> MoveToErrorQueue(ErrorContext errorContext, string errorQueue, bool includeStandardHeaders)
+        async Task<ErrorHandleResult> MoveToErrorQueue(ErrorContext errorContext, string errorQueue, bool includeStandardHeaders, CancellationToken cancellationToken)
         {
             var message = errorContext.Message;
 
@@ -56,24 +56,24 @@ namespace NServiceBus.Raw
             }
             var transportOperations = new TransportOperations(new TransportOperation(outgoingMessage, new UnicastAddressTag(errorQueue)));
 
-            await dispatcher.Dispatch(transportOperations, errorContext.TransportTransaction).ConfigureAwait(false);
+            await dispatcher.Dispatch(transportOperations, errorContext.TransportTransaction, cancellationToken).ConfigureAwait(false);
             return ErrorHandleResult.Handled;
         }
 
         class Context : IErrorHandlingPolicyContext
         {
-            Func<ErrorContext, string, bool, Task<ErrorHandleResult>> moveToErrorQueue;
+            Func<ErrorContext, string, bool, CancellationToken, Task<ErrorHandleResult>> moveToErrorQueue;
 
-            public Context(string failedQueue, ErrorContext error, Func<ErrorContext, string, bool, Task<ErrorHandleResult>> moveToErrorQueue)
+            public Context(string failedQueue, ErrorContext error, Func<ErrorContext, string, bool, CancellationToken, Task<ErrorHandleResult>> moveToErrorQueue)
             {
                 this.moveToErrorQueue = moveToErrorQueue;
                 Error = error;
                 FailedQueue = failedQueue;
             }
 
-            public Task<ErrorHandleResult> MoveToErrorQueue(string errorQueue, bool attachStandardFailureHeaders = true)
+            public Task<ErrorHandleResult> MoveToErrorQueue(string errorQueue, bool attachStandardFailureHeaders = true, CancellationToken cancellationToken = default)
             {
-                return moveToErrorQueue(Error, errorQueue, attachStandardFailureHeaders);
+                return moveToErrorQueue(Error, errorQueue, attachStandardFailureHeaders, cancellationToken);
             }
 
             public ErrorContext Error { get; }

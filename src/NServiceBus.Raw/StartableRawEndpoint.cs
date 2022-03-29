@@ -1,11 +1,10 @@
 namespace NServiceBus.Raw
 {
-    using NServiceBus.Logging;
-    using NServiceBus.Transport;
     using System;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using NServiceBus.Transport;
 
     class StartableRawEndpoint : IStartableRawEndpoint
     {
@@ -15,15 +14,15 @@ namespace NServiceBus.Raw
             RawCriticalError criticalError)
         {
             this.criticalError = criticalError;
-            this.messagePump = transportInfrastructure.Receivers.Values.First();
-            this.dispatcher = transportInfrastructure.Dispatcher;
+            messagePump = transportInfrastructure.Receivers.Values.First();
+            dispatcher = transportInfrastructure.Dispatcher;
             this.rawEndpointConfiguration = rawEndpointConfiguration;
             this.transportInfrastructure = transportInfrastructure;
             SubscriptionManager = messagePump.Subscriptions;
             TransportAddress = messagePump.ReceiveAddress;
         }
 
-        public async Task<IReceivingRawEndpoint> Start()
+        public async Task<IReceivingRawEndpoint> Start(CancellationToken cancellationToken = default)
         {
             if (startHasBeenCalled)
             {
@@ -40,27 +39,31 @@ namespace NServiceBus.Raw
 
                 if (receiver != null)
                 {
-                    await InitializeReceiver(receiver).ConfigureAwait(false);
+                    await receiver.Init(cancellationToken).ConfigureAwait(false);
                 }
             }
 
             var runningInstance = new RunningRawEndpointInstance(EndpointName, receiver, transportInfrastructure);
 
             // set the started endpoint on CriticalError to pass the endpoint to the critical error action
-            criticalError.SetEndpoint(runningInstance);
+            criticalError.SetEndpoint(runningInstance, cancellationToken);
 
             try
             {
                 if (receiver != null)
                 {
-                    StartReceiver(receiver);
+                    await receiver.Start(cancellationToken).ConfigureAwait(false);
                 }
 
                 return runningInstance;
             }
+            catch (Exception ex) when (ex.IsCausedBy(cancellationToken))
+            {
+                throw;
+            }
             catch
             {
-                await runningInstance.Stop();
+                await runningInstance.Stop(cancellationToken).ConfigureAwait(false);
 
                 throw;
             }
@@ -71,40 +74,14 @@ namespace NServiceBus.Raw
         public string TransportAddress { get; }
         public string EndpointName => rawEndpointConfiguration.EndpointName;
 
-        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, CancellationToken cancellationToken = default(CancellationToken))
+        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, CancellationToken cancellationToken = default)
         {
-            return dispatcher.Dispatch(outgoingMessages, transaction);
+            return dispatcher.Dispatch(outgoingMessages, transaction, cancellationToken);
         }
 
         public string ToTransportAddress(QueueAddress logicalAddress)
         {
             return transportInfrastructure.ToTransportAddress(logicalAddress);
-        }
-
-        static void StartReceiver(RawTransportReceiver receiver)
-        {
-            try
-            {
-                receiver.Start();
-            }
-            catch (Exception ex)
-            {
-                Logger.Fatal("Receiver failed to start.", ex);
-                throw;
-            }
-        }
-
-        static async Task InitializeReceiver(RawTransportReceiver receiver)
-        {
-            try
-            {
-                await receiver.Init().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Logger.Fatal("Receiver failed to initialize.", ex);
-                throw;
-            }
         }
 
         RawTransportReceiver BuildMainReceiver()
@@ -125,6 +102,5 @@ namespace NServiceBus.Raw
         IMessageReceiver messagePump;
         IMessageDispatcher dispatcher;
         bool startHasBeenCalled;
-        static ILog Logger = LogManager.GetLogger<StartableRawEndpoint>();
     }
 }

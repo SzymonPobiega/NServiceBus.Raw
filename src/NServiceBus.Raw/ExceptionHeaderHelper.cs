@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-
-namespace NServiceBus.Raw
+﻿namespace NServiceBus.Raw
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+
     static class ExceptionHeaderHelper
     {
         public static void SetExceptionHeaders(Dictionary<string, string> headers, Exception e)

@@ -1,7 +1,8 @@
 namespace NServiceBus.Raw
 {
-    using Logging;
+    using System.Threading;
     using System.Threading.Tasks;
+    using Logging;
     using Transport;
 
     class StoppableRawEndpoint : IStoppableRawEndpoint
@@ -12,13 +13,13 @@ namespace NServiceBus.Raw
             this.transportInfrastructure = transportInfrastructure;
         }
 
-        public async Task Stop()
+        public async Task Stop(CancellationToken cancellationToken = default)
         {
             Log.Info("Initiating shutdown.");
 
             try
             {
-                await transportInfrastructure.Shutdown().ConfigureAwait(false);
+                await transportInfrastructure.Shutdown(cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException)
             {

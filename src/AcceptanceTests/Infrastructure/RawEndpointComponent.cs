@@ -77,7 +77,7 @@ class RawEndpointComponent<TContext> : IComponentBehavior
         var sendOnly = onMessage == null;
         var config = sendOnly
             ? RawEndpointConfiguration.CreateSendOnly(name, transportDefinition)
-            : RawEndpointConfiguration.Create(name, transportDefinition, (c, d) => onMessage(c, typedScenarioContext, d), "poison");
+            : RawEndpointConfiguration.Create(name, transportDefinition, (c, d, _) => onMessage(c, typedScenarioContext, d), "poison");
 
         config.AutoCreateQueues();
 

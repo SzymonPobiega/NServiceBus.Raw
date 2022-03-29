@@ -1,10 +1,10 @@
 namespace NServiceBus.Raw
 {
-    using NServiceBus.Logging;
     using System;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using NServiceBus.Logging;
 
     class RawCriticalError : CriticalError
     {
@@ -14,7 +14,7 @@ namespace NServiceBus.Raw
             criticalErrorAction = onCriticalErrorAction;
         }
 
-        public override void Raise(string errorMessage, Exception exception, CancellationToken cancellationToken = default(CancellationToken))
+        public override void Raise(string errorMessage, Exception exception, CancellationToken cancellationToken = default)
         {
             //Intentionally don't call base.Raise
             Guard.AgainstNullAndEmpty(nameof(errorMessage), errorMessage);
@@ -35,30 +35,40 @@ namespace NServiceBus.Raw
             }
 
             // don't await the criticalErrorAction in order to avoid deadlocks
-            RaiseForEndpoint(errorMessage, exception);
+            RaiseForEndpoint(errorMessage, exception, cancellationToken);
         }
 
-        void RaiseForEndpoint(string errorMessage, Exception exception)
+        void RaiseForEndpoint(string errorMessage, Exception exception, CancellationToken cancellationToken)
         {
-            Task.Run(() =>
+            if (string.IsNullOrEmpty(errorMessage))
             {
-                var context = new CriticalErrorContext(async (_) =>
-                {
-                    var stoppable = await endpoint.StopReceiving().ConfigureAwait(false);
-                    await stoppable.Stop().ConfigureAwait(false);
-                }, errorMessage, exception);
-                return criticalErrorAction(context, CancellationToken.None);
-            });
+                throw new ArgumentException($"'{nameof(errorMessage)}' cannot be null or empty.", nameof(errorMessage));
+            }
+
+            if (exception is null)
+            {
+                throw new ArgumentNullException(nameof(exception));
+            }
+
+            _ = Task.Run(() =>
+              {
+                  var context = new CriticalErrorContext(async (_) =>
+                  {
+                      var stoppable = await endpoint.StopReceiving(cancellationToken).ConfigureAwait(false);
+                      await stoppable.Stop(cancellationToken).ConfigureAwait(false);
+                  }, errorMessage, exception);
+                  return criticalErrorAction(context, cancellationToken);
+              }, cancellationToken);
         }
 
-        internal void SetEndpoint(IReceivingRawEndpoint endpointInstance)
+        internal void SetEndpoint(IReceivingRawEndpoint endpointInstance, CancellationToken cancellationToken = default)
         {
             lock (endpointCriticalLock)
             {
                 endpoint = endpointInstance;
                 foreach (var latentCritical in criticalErrors)
                 {
-                    RaiseForEndpoint(latentCritical.Message, latentCritical.Exception);
+                    RaiseForEndpoint(latentCritical.Message, latentCritical.Exception, cancellationToken);
                 }
                 criticalErrors.Clear();
             }
