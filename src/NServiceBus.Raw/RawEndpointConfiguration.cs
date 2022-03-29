@@ -38,14 +38,15 @@ namespace NServiceBus.Raw
         {
             ValidateEndpointName(endpointName);
 
-            this.EndpointName = endpointName;
-            this.TransportDefinition = transportDefinition;
-            this.OnMessage = onMessage;
-            this.PoisonMessageQueue = poisonMessageQueue;
+            EndpointName = endpointName;
+            TransportDefinition = transportDefinition;
+            OnMessage = onMessage;
+            PoisonMessageQueue = poisonMessageQueue;
             ErrorHandlingPolicy = new DefaultErrorHandlingPolicy(poisonMessageQueue, 3);
             SendOnly = onMessage == null;
             PushRuntimeSettings = PushRuntimeSettings.Default;
             OnCriticalError = (_, __) => Task.CompletedTask;
+            AdditionalQueues = new string[0];
         }
 
         /// <summary>
@@ -117,7 +118,6 @@ namespace NServiceBus.Raw
             }
         }
 
-
         internal bool SendOnly { get; private set; }
         internal IErrorHandlingPolicy ErrorHandlingPolicy { get; private set; }
         internal Func<MessageContext, IMessageDispatcher, Task> OnMessage { get; private set; }
@@ -126,7 +126,7 @@ namespace NServiceBus.Raw
         internal TransportDefinition TransportDefinition { get; private set; }
         internal PushRuntimeSettings PushRuntimeSettings { get; private set; }
         internal bool SetupInfrastructure { get; private set; }
-        internal string[] AdditionalQueues { get; private set; } = new string[0];
+        internal string[] AdditionalQueues { get; private set; }
         internal bool PublishAndSubscribeDisabled { get; private set; }
         internal Func<ICriticalErrorContext, CancellationToken, Task> OnCriticalError { get; private set; }
     }
