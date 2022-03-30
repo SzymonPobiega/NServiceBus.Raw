@@ -1,9 +1,9 @@
 namespace NServiceBus.Raw
 {
+    using NServiceBus.Transport;
     using System;
     using System.Threading;
     using System.Threading.Tasks;
-    using NServiceBus.Transport;
 
     /// <summary>
     /// Configuration used to create a raw endpoint instance.
@@ -24,7 +24,7 @@ namespace NServiceBus.Raw
         public static RawEndpointConfiguration Create(
             string endpointName,
             TransportDefinition transportDefinition,
-            Func<MessageContext, IMessageDispatcher, CancellationToken, Task> onMessage, //TODO: add cancellation token
+            Func<MessageContext, IMessageDispatcher, CancellationToken, Task> onMessage,
             string poisonMessageQueue)
         {
             return new RawEndpointConfiguration(endpointName, transportDefinition, onMessage, poisonMessageQueue);
