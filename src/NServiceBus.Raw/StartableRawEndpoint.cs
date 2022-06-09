@@ -10,7 +10,7 @@ namespace NServiceBus.Raw
 
     class StartableRawEndpoint : IStartableRawEndpoint
     {
-        public StartableRawEndpoint(SettingsHolder settings, TransportInfrastructure transportInfrastructure, RawCriticalError criticalError, IPushMessages messagePump, IDispatchMessages dispatcher, IManageSubscriptions subscriptionManager, Func<MessageContext, IDispatchMessages, Task> onMessage, string localAddress)
+        public StartableRawEndpoint(SettingsHolder settings, TransportInfrastructure transportInfrastructure, RawCriticalError criticalError, Func<IPushMessages> messagePump, IDispatchMessages dispatcher, IManageSubscriptions subscriptionManager, Func<MessageContext, IDispatchMessages, Task> onMessage, string localAddress)
         {
             this.criticalError = criticalError;
             this.messagePump = messagePump;
@@ -47,7 +47,7 @@ namespace NServiceBus.Raw
             {
                 if (receiver != null)
                 {
-                    StartReceiver(receiver);
+                    await StartReceiver(receiver).ConfigureAwait(false);
                 }
 
                 return runningInstance;
@@ -76,11 +76,11 @@ namespace NServiceBus.Raw
             return transportInfrastructure.ToTransportAddress(logicalAddress);
         }
 
-        static void StartReceiver(RawTransportReceiver receiver)
+        static Task StartReceiver(RawTransportReceiver receiver)
         {
             try
             {
-                receiver.Start();
+                return receiver.Start();
             }
             catch (Exception ex)
             {
@@ -158,7 +158,7 @@ namespace NServiceBus.Raw
         SettingsHolder settings;
         TransportInfrastructure transportInfrastructure;
         RawCriticalError criticalError;
-        IPushMessages messagePump;
+        Func<IPushMessages> messagePump;
         IDispatchMessages dispatcher;
         Func<MessageContext, IDispatchMessages, Task> onMessage;
         string localAddress;

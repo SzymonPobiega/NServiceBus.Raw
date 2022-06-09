@@ -33,7 +33,7 @@ namespace NServiceBus.Raw
             var localAddress = transportInfrastructure.ToTransportAddress(mainLogicalAddress);
             settings.SetDefault(mainLogicalAddress);
 
-            IPushMessages messagePump = null;
+            Func<IPushMessages> messagePump = null;
             IManageSubscriptions subscriptionManager = null;
 
             if (!settings.GetOrDefault<bool>("Endpoint.SendOnly"))
@@ -42,7 +42,7 @@ namespace NServiceBus.Raw
 
                 var receiveInfrastructure = transportInfrastructure.ConfigureReceiveInfrastructure();
                 var queueCreator = receiveInfrastructure.QueueCreatorFactory();
-                messagePump = receiveInfrastructure.MessagePumpFactory();
+                messagePump = receiveInfrastructure.MessagePumpFactory;
                 var queueBindings = settings.Get<QueueBindings>();
                 queueBindings.BindReceiving(localAddress);
 

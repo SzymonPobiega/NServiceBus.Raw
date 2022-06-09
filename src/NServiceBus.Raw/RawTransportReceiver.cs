@@ -7,32 +7,38 @@ namespace NServiceBus.Raw
 {
     class RawTransportReceiver
     {
-        public RawTransportReceiver(IPushMessages pushMessages, IDispatchMessages dispatcher, Func<MessageContext, IDispatchMessages, Task> onMessage, PushSettings pushSettings, PushRuntimeSettings pushRuntimeSettings, CriticalError criticalError, RawEndpointErrorHandlingPolicy errorHandlingPolicy)
+        public RawTransportReceiver(Func<IPushMessages> pushMessages, IDispatchMessages dispatcher, Func<MessageContext, IDispatchMessages, Task> onMessage, PushSettings pushSettings, PushRuntimeSettings pushRuntimeSettings, CriticalError criticalError, RawEndpointErrorHandlingPolicy errorHandlingPolicy)
         {
             this.criticalError = criticalError;
             this.errorHandlingPolicy = errorHandlingPolicy;
             this.pushRuntimeSettings = pushRuntimeSettings;
             this.pushSettings = pushSettings;
 
-            receiver = pushMessages;
+            pumpFactory = pushMessages;
             this.onMessage = context => onMessage(context, dispatcher);
         }
 
         public Task Init()
         {
+            receiver = pumpFactory();
             return receiver.Init(ctx => onMessage(ctx), ctx => errorHandlingPolicy.OnError(ctx), criticalError, pushSettings);
         }
 
-        public void Start()
+        public async Task Start()
         {
             if (isStarted)
             {
-                throw new InvalidOperationException("The transport is already started");
+                return;
             }
 
             try
             {
                 Logger.DebugFormat("Receiver is starting, listening to queue {0}.", pushSettings.InputQueue);
+
+                if (receiver == null)
+                {
+                    await Init().ConfigureAwait(false);
+                }
 
                 receiver.Start(pushRuntimeSettings);
 
@@ -40,8 +46,15 @@ namespace NServiceBus.Raw
             }
             catch
             {
+                //We call methods that can fail on a local variable to make sure the state is clean after Start fails and we can re-try
+                var receiverStopping = receiver;
+                receiver = null;
                 isStarted = false;
-                receiver.Stop();
+
+                if (receiverStopping != null)
+                {
+                    await receiverStopping.Stop().ConfigureAwait(false);
+                }
                 throw;
             }
         }
@@ -53,12 +66,16 @@ namespace NServiceBus.Raw
                 return;
             }
 
-            await receiver.Stop().ConfigureAwait(false);
-            if (receiver is IDisposable disposable)
+            //We call methods that can fail on a local variable to make sure the state is clean after Stop fails and we can restart
+            var receiverStopping = receiver;
+            receiver = null;
+            isStarted = false;
+
+            await receiverStopping.Stop().ConfigureAwait(false);
+            if (receiverStopping is IDisposable disposable)
             {
                 disposable.Dispose();
             }
-            isStarted = false;
         }
 
         CriticalError criticalError;
@@ -67,6 +84,7 @@ namespace NServiceBus.Raw
         PushRuntimeSettings pushRuntimeSettings;
         PushSettings pushSettings;
         IPushMessages receiver;
+        Func<IPushMessages> pumpFactory;
         Func<MessageContext, Task> onMessage;
 
         static ILog Logger = LogManager.GetLogger<RawTransportReceiver>();

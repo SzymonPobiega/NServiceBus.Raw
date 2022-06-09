@@ -11,5 +11,23 @@ namespace NServiceBus.Raw
         /// Stops receiving of messages. The endpoint can still send messages.
         /// </summary>
         Task<IStoppableRawEndpoint> StopReceiving();
+
+        /// <summary>
+        /// Pauses receiving.
+        /// </summary>
+        /// <returns></returns>
+        Task Pause();
+
+        /// <summary>
+        /// Resumes receiving.
+        /// </summary>
+        /// <returns></returns>
+        Task Resume();
+
+        /// <summary>
+        /// Resumes receiving with specified maximum concurrency.
+        /// </summary>
+        /// <returns></returns>
+        Task Resume(int maximumConcurrency);
     }
 }

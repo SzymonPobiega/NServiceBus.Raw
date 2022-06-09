@@ -39,6 +39,36 @@ namespace NServiceBus.Raw
             return new StoppableRawEndpoint(transportInfrastructure, settings);
         }
 
+        public async Task Pause()
+        {
+            if (receiver != null)
+            {
+                Log.Info("Pausing receiver.");
+                await receiver.Stop().ConfigureAwait(false);
+                Log.Info("Receiver paused.");
+            }
+        }
+
+        public async Task Resume()
+        {
+            if (receiver != null)
+            {
+                Log.Info("Resuming receiver.");
+                await receiver.Start().ConfigureAwait(false);
+                Log.Info("Receiver resumed.");
+            }
+        }
+
+        public async Task Resume(int maxConcurrency)
+        {
+            if (receiver != null)
+            {
+                Log.Info("Resuming receiver.");
+                await receiver.Start(maxConcurrency).ConfigureAwait(false);
+                Log.Info("Receiver resumed.");
+            }
+        }
+
         public string TransportAddress { get; }
         public string EndpointName => settings.EndpointName();
         public ReadOnlySettings Settings => settings;

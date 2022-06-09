@@ -10,4 +10,3 @@ public class When_publishing_to_another_endpoint_ASB : When_publishing_to_anothe
         extensions.UseForwardingTopology();
     }
 }
-
