@@ -8,6 +8,6 @@ public class When_publishing_to_another_endpoint_RabbitMQ : When_publishing_to_a
 {
     protected override TransportDefinition SetupTransport()
     {
-        return new RabbitMQTransport(new ConventionalRoutingTopology(true), "host=localhost");
+        return new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), "host=localhost");
     }
 }

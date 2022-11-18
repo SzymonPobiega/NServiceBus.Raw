@@ -9,7 +9,7 @@ public static class Helper
 
         return new AzureStorageQueueTransport(connectionString)
         {
-            MessageWrapperSerializationDefinition = new NewtonsoftSerializer()
+            MessageWrapperSerializationDefinition = new NewtonsoftJsonSerializer()
         };
     }
 }

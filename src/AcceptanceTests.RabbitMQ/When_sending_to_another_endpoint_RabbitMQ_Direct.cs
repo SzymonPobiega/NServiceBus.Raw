@@ -8,6 +8,6 @@ public class When_sending_to_another_endpoint_RabbitMQ_Direct : When_sending_to_
 {
     protected override TransportDefinition SetupTransport()
     {
-        return new RabbitMQTransport(new DirectRoutingTopology(true), "host=localhost");
+        return new RabbitMQTransport(RoutingTopology.Direct(QueueType.Quorum), "host=localhost");
     }
 }
