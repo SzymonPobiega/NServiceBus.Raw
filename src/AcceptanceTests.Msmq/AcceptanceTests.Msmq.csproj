@@ -1,16 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net452</TargetFramework>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="7.4.0" />
-    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="7.4.0" />
-    <PackageReference Include="NServiceBus.Transport.Msmq" Version="1.0.0" />
-    <PackageReference Include="NUnit" Version="3.12.0" />
-    <ProjectReference Include="..\NServiceBus.Raw\NServiceBus.Raw.csproj" />
-    <ProjectReference Include="..\AcceptanceTests\AcceptanceTests.csproj" />
+	<PropertyGroup>
+		<TargetFramework>net48</TargetFramework>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="NServiceBus" Version="8.0.0" />
+		<PackageReference Include="NServiceBus.AcceptanceTesting" Version="8.0.0" />
+		<PackageReference Include="NServiceBus.Transport.Msmq" Version="2.0.0" />
+		<ProjectReference Include="..\NServiceBus.Raw\NServiceBus.Raw.csproj" />
+		<ProjectReference Include="..\AcceptanceTests\AcceptanceTests.csproj" />
 
-    <Reference Include="System.Messaging" />
-    <Reference Include="System.Transactions" />
-  </ItemGroup>
+		<Reference Include="System.Messaging" />
+		<Reference Include="System.Transactions" />
+
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
+		<PackageReference Include="NUnit" Version="3.13.3" />
+		<PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
+	</ItemGroup>
 </Project>

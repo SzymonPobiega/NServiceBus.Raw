@@ -1,67 +1,52 @@
+using NServiceBus.AcceptanceTesting;
+using NServiceBus.AcceptanceTesting.Support;
+using NServiceBus.Raw;
+using NServiceBus.Routing;
+using NServiceBus.Transport;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using NServiceBus;
-using NServiceBus.AcceptanceTesting;
-using NServiceBus.AcceptanceTesting.Support;
-using NServiceBus.Extensibility;
-using NServiceBus.Raw;
-using NServiceBus.Routing;
-using NServiceBus.Transport;
 
 static class RawEndpointComponentExtensions
 {
     public static IScenarioWithEndpointBehavior<TContext> WithRawEndpoint<TTransport, TContext>(this IScenarioWithEndpointBehavior<TContext> scenario,
-        Action<TransportExtensions<TTransport>> customizeTransport,
-        string name, Func<MessageContext, TContext, IDispatchMessages, Task> onMessage,
+        TransportDefinition transportDefinition,
+        string name,
+        Func<MessageContext, TContext, IMessageDispatcher, Task> onMessage,
         Func<IRawEndpoint, TContext, Task> onStarting = null,
         Func<IRawEndpoint, TContext, Task> onStarted = null,
         Action<RawEndpointConfiguration> configure = null)
         where TContext : ScenarioContext
-        where TTransport : TransportDefinition, new()
+        where TTransport : TransportDefinition
     {
-        void configureWithTransport(RawEndpointConfiguration cfg)
-        {
-            configure?.Invoke(cfg);
-            var ext = cfg.UseTransport<TTransport>();
-            customizeTransport(ext);
-        }
-
-        var component = new RawEndpointComponent<TContext>(name, onMessage, onStarting, onStarted, configureWithTransport);
+        var component = new RawEndpointComponent<TContext>(name, transportDefinition, onMessage, onStarting, onStarted, configure);
         return scenario.WithComponent(component);
     }
 
     public static IScenarioWithEndpointBehavior<TContext> WithRawSendOnlyEndpoint<TTransport, TContext>(this IScenarioWithEndpointBehavior<TContext> scenario,
-        Action<TransportExtensions<TTransport>> customizeTransport,
-        string name, 
+        TransportDefinition transportDefinition,
+        string name,
         Func<IRawEndpoint, TContext, Task> onStarting = null,
         Func<IRawEndpoint, TContext, Task> onStarted = null,
         Action<RawEndpointConfiguration> configure = null)
         where TContext : ScenarioContext
-        where TTransport : TransportDefinition, new()
+        where TTransport : TransportDefinition
     {
-        void configureWithTransport(RawEndpointConfiguration cfg)
-        {
-            configure?.Invoke(cfg);
-            var ext = cfg.UseTransport<TTransport>();
-            customizeTransport(ext);
-        }
-
-        var component = new RawEndpointComponent<TContext>(name, null, onStarting, onStarted, configureWithTransport);
+        var component = new RawEndpointComponent<TContext>(name, transportDefinition, null, onStarting, onStarted, configure);
         return scenario.WithComponent(component);
     }
 
     public static Task Send(this IRawEndpoint endpoint, string destination, Dictionary<string, string> headers, byte[] body)
     {
         var op = new TransportOperation(new OutgoingMessage(Guid.NewGuid().ToString(), headers, body), new UnicastAddressTag(destination));
-        return endpoint.Dispatch(new TransportOperations(op), new TransportTransaction(), new ContextBag());
+        return endpoint.Dispatch(new TransportOperations(op), new TransportTransaction());
     }
 
     public static Task Publish(this IRawEndpoint endpoint, Type eventType, Dictionary<string, string> headers, byte[] body)
     {
         var op = new TransportOperation(new OutgoingMessage(Guid.NewGuid().ToString(), headers, body), new MulticastAddressTag(eventType));
-        return endpoint.Dispatch(new TransportOperations(op), new TransportTransaction(), new ContextBag());
+        return endpoint.Dispatch(new TransportOperations(op), new TransportTransaction());
     }
 }
 
@@ -69,14 +54,16 @@ class RawEndpointComponent<TContext> : IComponentBehavior
     where TContext : ScenarioContext
 {
     string name;
-    Func<MessageContext, TContext, IDispatchMessages, Task> onMessage;
+    private readonly TransportDefinition transportDefinition;
+    Func<MessageContext, TContext, IMessageDispatcher, Task> onMessage;
     Func<IRawEndpoint, TContext, Task> onStarting;
     Func<IRawEndpoint, TContext, Task> onStarted;
     Action<RawEndpointConfiguration> configure;
 
-    public RawEndpointComponent(string name, Func<MessageContext, TContext, IDispatchMessages, Task> onMessage, Func<IRawEndpoint, TContext, Task> onStarting, Func<IRawEndpoint, TContext, Task> onStarted, Action<RawEndpointConfiguration> configure)
+    public RawEndpointComponent(string name, TransportDefinition transportDefinition, Func<MessageContext, TContext, IMessageDispatcher, Task> onMessage, Func<IRawEndpoint, TContext, Task> onStarting, Func<IRawEndpoint, TContext, Task> onStarted, Action<RawEndpointConfiguration> configure)
     {
         this.name = name;
+        this.transportDefinition = transportDefinition;
         this.onMessage = onMessage;
         this.onStarting = onStarting;
         this.onStarted = onStarted;
@@ -89,11 +76,16 @@ class RawEndpointComponent<TContext> : IComponentBehavior
 
         var sendOnly = onMessage == null;
         var config = sendOnly
-            ? RawEndpointConfiguration.CreateSendOnly(name)
-            : RawEndpointConfiguration.Create(name, (c, d) => onMessage(c, typedScenarioContext, d), "poison");
+            ? RawEndpointConfiguration.CreateSendOnly(name, transportDefinition)
+            : RawEndpointConfiguration.Create(name, transportDefinition, (c, d, _) => onMessage(c, typedScenarioContext, d), "poison");
 
-        config.AutoCreateQueue();
-        configure(config);
+        config.AutoCreateQueues();
+
+        if (configure != null)
+        {
+            configure(config);
+        }
+
         return Task.FromResult<ComponentRunner>(new Runner(config, name, sendOnly,
             endpoint => onStarting != null ? onStarting(endpoint, typedScenarioContext) : Task.FromResult(0),
             endpoint => onStarted != null ? onStarted(endpoint, typedScenarioContext) : Task.FromResult(0)));
@@ -132,7 +124,7 @@ class RawEndpointComponent<TContext> : IComponentBehavior
             {
                 endpoint = startable;
             }
-            
+
             await onStarting(endpoint).ConfigureAwait(false);
         }
 

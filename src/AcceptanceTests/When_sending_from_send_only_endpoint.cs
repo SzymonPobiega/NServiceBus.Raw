@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using NServiceBus.AcceptanceTesting;
+﻿using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.Transport;
 using NUnit.Framework;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
 
 public abstract class When_sending_from_send_only_endpoint<TTransport> : NServiceBusAcceptanceTest<TTransport>
-    where TTransport : TransportDefinition, new()
+    where TTransport : TransportDefinition
 {
     [Test]
     public async Task It_receives_the_message()
@@ -21,15 +21,15 @@ public abstract class When_sending_from_send_only_endpoint<TTransport> : NServic
         var body = Encoding.UTF8.GetBytes("Hello world!");
 
         var result = await Scenario.Define<Context>()
-            .WithRawSendOnlyEndpoint<TTransport, Context>(SetupTransport, "Sender",
+            .WithRawSendOnlyEndpoint<TTransport, Context>(SetupTransport(), "Sender",
                 onStarted: (endpoint, scenario) => endpoint.Send("Receiver", headers, body))
-            .WithRawEndpoint<TTransport, Context>(SetupTransport, "Receiver",
+            .WithRawEndpoint<TTransport, Context>(SetupTransport(), "Receiver",
                 onMessage: (context, scenario, dispatcher) =>
                 {
                     if (context.Headers.TryGetValue("Secret", out var receivedSecret) && receivedSecret == secret.ToString())
                     {
                         scenario.MessageReceived = true;
-                        scenario.Message = Encoding.UTF8.GetString(context.Body);
+                        scenario.Message = Encoding.UTF8.GetString(context.Body.ToArray());
                     }
                     return Task.FromResult(0);
                 })

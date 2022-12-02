@@ -1,11 +1,16 @@
 ﻿using NServiceBus;
 using NServiceBus.AcceptanceTests.ScenarioDescriptors;
+using NServiceBus.Transport;
 
 public static class Helper
 {
-    public static void ConfigureSql(this TransportExtensions<SqlServerTransport> extensions)
+    public static TransportDefinition ConfigureSql()
     {
-        extensions.ConnectionString(EnvironmentHelper.GetEnvironmentVariable("SqlServerTransportConnectionString"));
-        extensions.Transactions(TransportTransactionMode.SendsAtomicWithReceive);
+        var connectionString = EnvironmentHelper.GetEnvironmentVariable("SqlServerTransportConnectionString");
+
+        return new SqlServerTransport(connectionString)
+        {
+            TransportTransactionMode = TransportTransactionMode.SendsAtomicWithReceive
+        };
     }
 }

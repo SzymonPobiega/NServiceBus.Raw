@@ -1,12 +1,12 @@
 ﻿using NServiceBus;
+using NServiceBus.Transport;
 using NUnit.Framework;
 
 [TestFixture]
 public class When_sending_from_send_only_endpoint_ASB : When_sending_from_send_only_endpoint<AzureServiceBusTransport>
 {
-    protected override void SetupTransport(TransportExtensions<AzureServiceBusTransport> extensions)
+    protected override TransportDefinition SetupTransport()
     {
-        extensions.ConfigureASB();
-        extensions.UseForwardingTopology();
+        return Helper.ConfigureASB();
     }
 }
